@@ -1,0 +1,5 @@
+name,workdays_per_week,weeks_pattern,prefers_night,no_evening,max_nights,edo_eligible,edo_fixed_day,team
+Alice,4,111111111111,False,False,3,True,,A
+Bob,3,111111111111,True,False,4,False,,A
+Carla,4,111111111111,False,True,2,True,,B
+Dan,3,111111111111,False,False,3,False,,B
