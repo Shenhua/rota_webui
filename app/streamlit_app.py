@@ -20,6 +20,12 @@ from rota.io.excel_export import export_to_excel, export_to_csv
 from rota.solver.engine import solve
 from rota.ui.normalize import normalize_assignments, apply_edo_policy
 
+# Import UI components
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from components.team_editor import render_team_editor, render_team_import
+
 
 # ============ Page Config ============
 st.set_page_config(
@@ -192,10 +198,26 @@ if st.session_state.schedule is not None:
         )
 
 
-# ============ Team Display ============
-if st.session_state.team:
-    with st.expander("👥 Current Team", expanded=False):
-        team_df = team_to_dataframe(st.session_state.team)
-        st.dataframe(team_df, use_container_width=True)
-else:
-    st.info("👆 Upload a team CSV to get started")
+# ============ Team Editor ============
+st.divider()
+
+def update_team(new_team):
+    st.session_state.team = new_team
+
+with st.expander("👥 Team Management", expanded=not st.session_state.team):
+    # CSV import option
+    imported = render_team_import(key_prefix="main")
+    if imported:
+        st.session_state.team = imported
+        st.rerun()
+    
+    # Editable team table
+    if st.session_state.team:
+        st.session_state.team = render_team_editor(
+            st.session_state.team, 
+            on_change=update_team,
+            key_prefix="main"
+        )
+
+if not st.session_state.team:
+    st.info("👆 Upload a team CSV or add people above to get started")

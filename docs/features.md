@@ -151,9 +151,17 @@ python legacy_v29.py \
   -v|-vv
 ```
 
-## Features NOT Currently Working
+## Implementation Status (After Refactor)
 
-1. ❌ **Solver-to-UI connection** — Results are dummy data
-2. ❌ **Excel export from UI** — Doesn't use real schedule
-3. ❌ **Weekend scheduling** — Only Mon–Fri in legacy solver
-4. ❌ **In-UI person editing** — Must use CSV upload
+### ✅ Working Features
+1. **Solver-to-UI connection** — OR-Tools CP-SAT solver integrated
+2. **Excel export from UI** — Download button produces valid workbook
+3. **Weekend scheduling** — Integrated mode (7-day) supported
+4. **In-UI person editing** — Team editor with add/edit/delete
+5. **Fairness constraints** — Night/evening distribution optimized
+6. **max_nights per person** — Hard constraint enforced
+
+### 🔄 Partial / Future Work
+1. **EDO allocation** — Model supports it, solver logic TBD
+2. **Coverage targets UI** — Can set via code, UI needs polish
+3. **Per-person sheets in Excel** — Simplified export only

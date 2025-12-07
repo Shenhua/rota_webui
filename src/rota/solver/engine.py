@@ -122,6 +122,16 @@ def solve(
                         <= config.max_nights_sequence
                     )
     
+    # 6. Max total nights per person over horizon (from person.max_nights)
+    for p_idx, person in enumerate(people):
+        if person.max_nights < weeks * len(days):  # Only if limited
+            total_nights = sum(
+                shift_vars[p_idx][w][d][ShiftType.NIGHT]
+                for w in range(1, weeks + 1)
+                for d in days
+            )
+            model.Add(total_nights <= person.max_nights)
+    
     # ========== Soft Constraints & Objective ==========
     objective_terms = []
     
