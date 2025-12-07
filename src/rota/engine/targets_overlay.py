@@ -1,111 +1,108 @@
-
-# src/rota/engine/targets_overlay.py
-from __future__ import annotations
+"""Bridge module to connect the new solver to the legacy UI API."""
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
-import importlib
-import copy
+from typing import Dict, Any, Optional, List
 import pandas as pd
 
-from .config import SolveConfig
-from .targets import normalize_targets_payload, apply_edo_policy, coverage_from_assignments, targets_penalty
-from . import utils_bundle
+from rota.models.person import Person
+from rota.models.schedule import Schedule
+from rota.models.constraints import SolverConfig, WeekendMode, FairnessMode
+from rota.io.csv_loader import load_team
+from rota.solver.engine import solve as ortools_solve
+
 
 @dataclass
 class SolveResult:
+    """Legacy-compatible result format for UI."""
     assignments: pd.DataFrame
     summary: Dict[str, Any]
     metrics_json: Dict[str, Any]
 
-def _import_legacy():
-    try:
-        return importlib.import_module("rota.engine.solve_legacy")
-    except Exception:
-        # Fallback to direct legacy module
-        return importlib.import_module("legacy.legacy_v29")
 
-def _call_legacy_solve(legacy_mod, csv_path: str, cfg: SolveConfig):
-    # Legacy exposes `solve(csv_path, cfg)` returning an object with .assignments, .summary, .metrics_json
-    return legacy_mod.solve(csv_path, cfg)
-
-def _attach_coverage(res: SolveResult, cfg: SolveConfig, targets_df: pd.DataFrame) -> SolveResult:
-    cov = coverage_from_assignments(apply_edo_policy(res.assignments, getattr(cfg, 'allow_edo', True)), targets_df)
-    pen = targets_penalty(cov, cfg.targets_weights_by_shift, cfg.targets_weight)
-    res.metrics_json = dict(res.metrics_json or {})
-    res.metrics_json["coverage"] = cov.to_dict(orient="records") if not cov.empty else []
-    res.metrics_json["targets_penalty"] = pen
-    res.summary = dict(res.summary or {})
-    res.summary.setdefault("score", 0.0)
-    res.summary["targets_penalty"] = pen
-    res.summary["coverage_cells"] = 0 if cov is None or cov.empty else int((cov["gap"] < 0).sum())
-    return res
-
-def solve(csv_path: str, cfg: Optional[SolveConfig] = None) -> SolveResult:
+def solve(csv_path: str, cfg: Optional[Any] = None) -> SolveResult:
     """
-    Overlay that can optionally impose service needs 'targets' by reranking restarts.
-    - If cfg.impose_targets is False or no targets provided: just forward to legacy (attach coverage if possible).
-    - If True: run multiple restarts (outer loop) and select best by composite score and tie‑breakers.
+    Solve scheduling problem - compatible with legacy UI expectations.
+    
+    Args:
+        csv_path: Path to team CSV, or can be a DataFrame
+        cfg: Configuration object (legacy SolveConfig or new SolverConfig)
+        
+    Returns:
+        SolveResult with assignments DataFrame and metadata
     """
-    legacy = _import_legacy()
-    cfg = cfg or SolveConfig()
-    assign_df_u, targets_df_u, cfg_json = utils_bundle.load_bundle(csv_path)
-
-    # Hydrate cfg from config.json (without clobbering already-specified fields)
-    for k, v in (cfg_json or {}).items():
-        try:
-            if not hasattr(cfg, k) or getattr(cfg, k) in (None, False, 0, {}, []):
-                setattr(cfg, k, v)
-        except Exception:
-            pass
-
-    targets_payload = cfg.coverage_targets or cfg.targets or cfg.service_needs
-    if targets_payload:
-        targets_df = normalize_targets_payload(targets_payload)
-    elif targets_df_u is not None and not targets_df_u.empty:
-        targets_df = targets_df_u[["week","day","shift","required"]].copy()
+    # Load team
+    if isinstance(csv_path, pd.DataFrame):
+        people = [Person.from_dict(row.to_dict()) for _, row in csv_path.iterrows()]
     else:
-        targets_df = pd.DataFrame(columns=["week","day","shift","required"])
+        people = load_team(csv_path)
+    
+    # Build solver config from legacy config if provided
+    solver_cfg = SolverConfig()
+    
+    if cfg is not None:
+        # Extract values from legacy config
+        if hasattr(cfg, "weeks"):
+            solver_cfg.weeks = int(cfg.weeks)
+        if hasattr(cfg, "tries"):
+            # OR-Tools doesn't need restarts - it's deterministic
+            pass
+        if hasattr(cfg, "time_limit_seconds"):
+            solver_cfg.time_limit_seconds = int(cfg.time_limit_seconds)
+        if hasattr(cfg, "forbid_night_to_day"):
+            solver_cfg.forbid_night_to_day = bool(cfg.forbid_night_to_day)
+        if hasattr(cfg, "max_nights_seq") or hasattr(cfg, "max_nights_sequence"):
+            solver_cfg.max_nights_sequence = int(
+                getattr(cfg, "max_nights_sequence", getattr(cfg, "max_nights_seq", 3))
+            )
+        if hasattr(cfg, "max_evenings_seq") or hasattr(cfg, "max_evenings_sequence"):
+            solver_cfg.max_evenings_sequence = int(
+                getattr(cfg, "max_evenings_sequence", getattr(cfg, "max_evenings_seq", 3))
+            )
+        if hasattr(cfg, "max_days_per_week"):
+            solver_cfg.max_days_per_week = int(cfg.max_days_per_week)
+        if hasattr(cfg, "allow_edo") or hasattr(cfg, "edo_enabled"):
+            solver_cfg.edo_enabled = bool(
+                getattr(cfg, "edo_enabled", getattr(cfg, "allow_edo", True))
+            )
+        
+        # Fairness mode mapping
+        if hasattr(cfg, "fairness_mode"):
+            fm = cfg.fairness_mode
+            if fm in ("none", "None"):
+                solver_cfg.fairness_mode = FairnessMode.NONE
+            elif fm in ("by-wd", "cohorts_days_per_week", "by_workdays"):
+                solver_cfg.fairness_mode = FairnessMode.BY_WORKDAYS
+            elif fm in ("global", "fair_nights"):
+                solver_cfg.fairness_mode = FairnessMode.GLOBAL
+            elif fm in ("by-team",):
+                solver_cfg.fairness_mode = FairnessMode.BY_TEAM
+    
+    # Run solver
+    schedule = ortools_solve(people, solver_cfg)
+    
+    # Convert to legacy format
+    assignments_df = schedule.to_dataframe()
+    
+    summary = {
+        "weeks": schedule.weeks,
+        "people": schedule.people_count,
+        "score": schedule.score,
+        "status": schedule.status,
+        "solve_time": schedule.solve_time_seconds,
+        "vacancies": schedule.violations.get("vacancies", 0),
+    }
+    
+    metrics_json = {
+        "violations": schedule.violations,
+        "fairness": schedule.fairness_metrics,
+        "config": solver_cfg.to_dict(),
+    }
+    
+    return SolveResult(
+        assignments=assignments_df,
+        summary=summary,
+        metrics_json=metrics_json,
+    )
 
-    if not bool(cfg.impose_targets) or targets_df.empty:
-        res = _call_legacy_solve(legacy, csv_path, cfg)
-        return _attach_coverage(res, cfg, targets_df)
 
-    # Imposed: run multiple restarts externally and select best by composite score
-    outer_tries = max(1, int(cfg.tries))
-    inner_cfg = copy.deepcopy(cfg)
-    try:
-        inner_cfg.tries = 1
-    except Exception:
-        pass
-
-    best: Optional[SolveResult] = None
-    best_key: Optional[Tuple[float, float, float]] = None  # (score_total, penalty, legacy_score) ascending
-    best_cov = None
-    best_pen = None
-
-    for _ in range(outer_tries):
-        res = _call_legacy_solve(legacy, csv_path, inner_cfg)
-        cov = coverage_from_assignments(apply_edo_policy(res.assignments, getattr(cfg, 'allow_edo', True)), targets_df)
-        pen = targets_penalty(cov, cfg.targets_weights_by_shift, cfg.targets_weight)
-        legacy_score = float(res.summary.get("score", 0.0)) if isinstance(res.summary, dict) else 0.0
-        score_total = legacy_score + float(cfg.alpha) * float(pen)
-        # Lower score_total is better if legacy is a minimization score; if it's higher-is-better, invert here.
-        key = (score_total, pen, legacy_score)
-        if best is None or key < best_key:
-            best = res
-            best_key = key
-            best_cov = cov.copy()
-            best_pen = pen
-
-    # Attach metrics and composite score
-    assert best is not None
-    best.metrics_json = dict(best.metrics_json or {})
-    best.metrics_json["targets_snapshot"] = targets_df.to_dict(orient="records") if not targets_df.empty else []
-    best.metrics_json["config_snapshot"] = {k: getattr(cfg, k) for k in ["impose_targets","allow_edo","alpha","tries","weeks","targets_weight"] if hasattr(cfg,k)}
-    best.metrics_json["coverage"] = best_cov.to_dict(orient="records") if best_cov is not None and not best_cov.empty else []
-    best.metrics_json["targets_penalty"] = best_pen
-    best.summary = dict(best.summary or {})
-    best.summary["targets_penalty"] = best_pen
-    best.summary["coverage_cells"] = 0 if best_cov is None or best_cov.empty else int((best_cov["gap"] < 0).sum())
-    best.summary["score_with_targets"] = float(best.summary.get("score", 0.0)) + float(cfg.alpha) * float(best_pen)
-    return best
+# Legacy alias for backwards compatibility
+SolveConfig = SolverConfig
