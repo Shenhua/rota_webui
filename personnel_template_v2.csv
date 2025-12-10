@@ -1,0 +1,6 @@
+name,workdays_per_week,weeks_pattern,prefers_night,no_evening,max_nights,edo_eligible,edo_fixed_day,team,available_weekends,max_weekends_per_month
+Alice Martin,4,1,0,0,,1,,,1,2
+Bob Dupont,4,1,0,0,,1,,,1,2
+Claire Bernard,3,1,0,0,,0,,,0,0
+David T,3,1,0,0,,0,,,1,1
+Eve R,5,1,1,0,,1,Mer,,1,2

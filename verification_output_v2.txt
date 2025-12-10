@@ -1,0 +1,12 @@
+[18:18:58] INFO    rota: Logging initialized: console=20, file=20
+2025-12-07 18:18:58,942 | INFO     | Logging initialized: console=20, file=20
+2025-12-07 18:18:58,942 | INFO     | === Running Test: Normal Load (10 people) ===
+2025-12-07 18:18:58,958 | INFO     | Status: OPTIMAL, Time: 0.01s
+2025-12-07 18:18:58,958 | INFO     | ✅ No constraint violations found.
+2025-12-07 18:18:58,958 | INFO     | Fairness Spread: 1 - 2 shifts (Δ=1)
+2025-12-07 18:18:58,958 | INFO     | === Running Test: Tight Load (4 people) ===
+2025-12-07 18:18:58,965 | INFO     | Status: OPTIMAL, Time: 0.01s
+2025-12-07 18:18:58,965 | INFO     | ✅ No constraint violations found.
+2025-12-07 18:18:58,965 | INFO     | Fairness Spread: 4 - 4 shifts (Δ=0)
+2025-12-07 18:18:58,965 | INFO     | === Running Test: Infeasible (3 people) ===
+2025-12-07 18:18:58,967 | INFO     | ✅ Correctly identified INFEASIBLE

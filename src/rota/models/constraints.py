@@ -38,6 +38,8 @@ class SolverConfig:
     # Solver behavior
     time_limit_seconds: int = 60
     num_workers: int = 4
+    parallel_portfolio: bool = False  # If True, enables parallel seeds in optimizer
+    workers_per_solve: int = 0 # If > 0, overrides internal CP-SAT worker count. 0 = Auto.
     
     # Days to schedule
     include_weekends: bool = False
@@ -50,6 +52,7 @@ class SolverConfig:
     
     # Hard constraints
     forbid_night_to_day: bool = True  # No work day after night
+    max_consecutive_days: int = 6  # Max consecutive working days (global)
     min_rest_after_night: int = 1  # Days of rest after night
     max_nights_sequence: int = 3  # Max consecutive nights
     max_evenings_sequence: int = 3  # Max consecutive evenings
@@ -67,7 +70,7 @@ class SolverConfig:
     preference_weight: float = 1.0  # Weight for honoring preferences
     
     # Legacy compatibility
-    impose_targets: bool = False  # If True, treat targets as hard constraints
+    impose_targets: bool = True  # If True, treat targets as hard caps (no overtime)
     alpha: float = 1.0  # Composite scoring weight
 
     def get_days(self) -> List[str]:
