@@ -3,14 +3,14 @@ Validation and Scoring
 ======================
 Validate schedule quality and compute weighted score matching legacy formula.
 """
-from typing import Dict, List, Set, Tuple
 from dataclasses import dataclass
 from statistics import pstdev
+from typing import Dict, List
 
 from rota.models.person import Person
-from rota.solver.pairs import PairSchedule, PairAssignment
-from rota.solver.edo import EDOPlan, JOURS
 from rota.models.schedule import Schedule
+from rota.solver.edo import JOURS, EDOPlan
+from rota.solver.pairs import PairSchedule
 from rota.solver.staffing import SHIFT_HOURS
 from rota.utils.logging_setup import get_logger
 
@@ -134,8 +134,8 @@ def validate_schedule(
         if not ws:
             continue
         for d in days:
-            # Check shifts D, N, and S
-            for s in ["D", "N", "S"]:
+            # Check PAIR shifts (D, N) - each slot needs 2 people
+            for s in ["D", "N"]:
                 expected = ws.slots[d].get(s, 0)
                 actual = sum(1 for a in schedule.assignments 
                             if a.week == w and a.day == d and a.shift == s)
@@ -153,7 +153,7 @@ def validate_schedule(
                 # Check pairs are complete (both slots filled)
                 for a in schedule.assignments:
                     if a.week == w and a.day == d and a.shift == s:
-                        if not a.person_a or not a.person_b:
+                        if a.person_a and not a.person_b:  # Has person_a but missing person_b
                             result.slots_vides += 1
                             result.add_violation(Violation(
                                 type="incomplete_pair",
@@ -162,7 +162,7 @@ def validate_schedule(
                                 message=f"Semaine {w} {d} {s}: paire incomplète"
                             ))
             
-            # Solo shifts (S, A)
+            # Check SOLO shifts (S, A) - each slot needs 1 person
             for s in ["S", "A"]:
                 expected = ws.slots[d].get(s, 0)
                 actual = sum(1 for a in schedule.assignments 
@@ -174,7 +174,8 @@ def validate_schedule(
                         type="unfilled_slot",
                         severity="critical",
                         week=w, day=d, shift=s,
-                        message=f"Semaine {w} {d}: {missing} créneaux {s} non remplis"
+                        message=f"Semaine {w} {d}: {missing} créneaux {s} non remplis",
+                        count=missing
                     ))
     
     # 2. Check for duplicates (same person twice on same day)
@@ -345,7 +346,7 @@ def calculate_fairness(
                 night_counts[a.person_a] += 1
             if a.person_b:
                 night_counts[a.person_b] += 1
-        elif a.shift == "E":
+        elif a.shift == "S":  # Soir
             if a.person_a:
                 eve_counts[a.person_a] += 1
             if a.person_b:

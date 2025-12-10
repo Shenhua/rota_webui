@@ -4,15 +4,14 @@ Results Export for Analysis
 Exports solver results to JSON for easy analysis by AI or scripts.
 """
 import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from rota.models.person import Person
-from rota.solver.pairs import PairSchedule
 from rota.solver.edo import EDOPlan
-from rota.solver.validation import ValidationResult, FairnessMetrics
+from rota.solver.pairs import PairSchedule
+from rota.solver.validation import FairnessMetrics, ValidationResult
 from rota.utils.logging_setup import get_logger
 
 logger = get_logger("rota.io.results_export")
@@ -57,7 +56,7 @@ def export_results(
     for p in people:
         name = p.name
         j = schedule.count_shifts(name, "D")
-        s = schedule.count_shifts(name, "E")
+        s = schedule.count_shifts(name, "S")  # S = Soir (not E)
         n = schedule.count_shifts(name, "N")
         a = schedule.count_shifts(name, "A")
         total = j + s + n + a

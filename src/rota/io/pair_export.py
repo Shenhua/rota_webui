@@ -5,17 +5,17 @@ Exports PairSchedule to Excel with all 6 legacy sheets and CSV with pair format.
 """
 import io
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 
 from rota.models.person import Person
-from rota.solver.pairs import PairSchedule, PairAssignment
-from rota.solver.edo import EDOPlan, JOURS
-from rota.solver.validation import ValidationResult, FairnessMetrics
+from rota.solver.edo import JOURS, EDOPlan
+from rota.solver.pairs import PairSchedule
+from rota.solver.validation import FairnessMetrics, ValidationResult
 from rota.solver.weekend import WeekendResult
 from rota.utils.logging_setup import get_logger
 
@@ -550,9 +550,12 @@ def export_merged_calendar(
 ) -> None:
     """
     Export merged calendar with:
-    1. 'Vue Manager': Global view (Wide format: Weeks as columns)
-    2. 'Perso_{Name}': Individual calendar tabs
-    3. 'Stats': Metrics
+    1. 'Tableau de bord': KPIs and options
+    2. 'Vue Manager': Global view (Wide format: Weeks as columns)
+    3. 'Synthèse': Per-person totals with weekend
+    4. 'Technique': Validation breakdown
+    5. 'Perso_{Name}': Individual calendar tabs
+    6. 'Week-end': Weekend assignments
     """
     logger.info("Exporting merged calendar (Enhanced)")
     
@@ -567,26 +570,91 @@ def export_merged_calendar(
     default_ws = wb.active
     wb.remove(default_ws)
     
-    # --- 1. Vue Manager (Global) ---
-    ws_mgr = wb.create_sheet("Vue Manager")
-    
     # Styles
     fill_day = PatternFill(start_color="DDEEFF", end_color="DDEEFF", fill_type="solid")
     fill_night = PatternFill(start_color="E6CCFF", end_color="E6CCFF", fill_type="solid")
     fill_solo = PatternFill(start_color="FFDDAA", end_color="FFDDAA", fill_type="solid")
     fill_24h = PatternFill(start_color="FFCCAA", end_color="FFCCAA", fill_type="solid")
+    fill_header = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
     
     font_bold = Font(bold=True)
+    font_white = Font(bold=True, color="FFFFFF")
     align_center = Alignment(horizontal="center", vertical="center")
     
+    # Border styles
+    grey_thin = Side(style='thin', color='CCCCCC')
+    black_double = Side(style='double', color='000000')
+    border_grey = Border(left=grey_thin, right=grey_thin, top=grey_thin, bottom=grey_thin)
+    
+    # ============================================================
+    # --- 0. TABLEAU DE BORD (Dashboard) ---
+    # ============================================================
+    ws_tdb = wb.create_sheet("Tableau de bord")
+    
+    # Header row
+    ws_tdb.append(["Indicateur", "Valeur"])
+    for cell in ws_tdb[1]:
+        cell.font = font_white
+        cell.fill = fill_header
+        cell.alignment = align_center
+    
+    # General KPIs
+    ws_tdb.append(["Effectif", len(people)])
+    ws_tdb.append(["Semaines", weeks])
+    ws_tdb.append(["Score interne", f"{weekday_schedule.score:.2f}" if weekday_schedule.score else "N/A"])
+    ws_tdb.append(["Temps résolution", f"{weekday_schedule.solve_time_seconds:.1f}s" if weekday_schedule.solve_time_seconds else "N/A"])
+    
+    # Validation section
+    ws_tdb.append([])  # Empty row
+    ws_tdb.append(["--- Validation ---", ""])
+    ws_tdb[ws_tdb.max_row][0].font = font_bold
+    
+    if validation:
+        ws_tdb.append(["Slots vides", validation.slots_vides])
+        incomplete = sum(1 for v in validation.violations if v.type == "incomplete_pair")
+        ws_tdb.append(["Paires incomplètes", incomplete])
+        ws_tdb.append(["Violations Nuit→Travail", validation.nuit_suivie_travail])
+        ws_tdb.append(["Transitions Soir→Jour", validation.soir_vers_jour])
+        ws_tdb.append(["Violations 48h", validation.rolling_48h_violations])
+    else:
+        ws_tdb.append(["(Validation non disponible)", ""])
+    
+    # Weekend section (if enabled)
+    if weekend_result and weekend_result.assignments:
+        ws_tdb.append([])
+        ws_tdb.append(["--- Week-end ---", ""])
+        ws_tdb[ws_tdb.max_row][0].font = font_bold
+        ws_tdb.append(["Assignations WE", len(weekend_result.assignments)])
+        ws_tdb.append(["Statut WE", weekend_result.status])
+    
+    # Options section
+    ws_tdb.append([])
+    ws_tdb.append(["--- Options ---", ""])
+    ws_tdb[ws_tdb.max_row][0].font = font_bold
+    ws_tdb.append(["EDO activé", "Oui" if config.get("edo_enabled") else "Non"])
+    ws_tdb.append(["Nuits max séquence", config.get("max_nights_sequence", "N/A")])
+    ws_tdb.append(["Mode équité", config.get("fairness_mode", "N/A")])
+    ws_tdb.append(["Seed", config.get("seed", "N/A")])
+    
+    # Column widths
+    ws_tdb.column_dimensions["A"].width = 25
+    ws_tdb.column_dimensions["B"].width = 20
+    
+    # ============================================================
+    # --- 1. VUE MANAGER (Global) ---
+    # ============================================================
+    ws_mgr = wb.create_sheet("Vue Manager")
+    
     # Build Map
-    full_map = {} # (person, week, day) -> code
+    full_map = {}  # (person, week, day) -> code
     
     # Weekday
     for a in weekday_schedule.assignments:
-        code = a.shift # "D", "N", "S"
-        if a.person_a: full_map[(a.person_a, a.week, a.day)] = code
-        if a.person_b: full_map[(a.person_b, a.week, a.day)] = code
+        code = a.shift  # "D", "N", "S"
+        if a.person_a:
+            full_map[(a.person_a, a.week, a.day)] = code
+        if a.person_b:
+            full_map[(a.person_b, a.week, a.day)] = code
             
     # Weekend
     if weekend_result:
@@ -603,8 +671,10 @@ def export_merged_calendar(
     ws_mgr.cell(row=2, column=1, value="Nom").font = font_bold
     
     col_idx = 2
+    week_start_cols = []  # Track first column of each week for borders
     for w in range(1, weeks + 1):
         start_col = col_idx
+        week_start_cols.append(start_col)
         end_col = col_idx + 6
         ws_mgr.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
         cell = ws_mgr.cell(row=1, column=start_col, value=f"Semaine {w}")
@@ -614,6 +684,7 @@ def export_merged_calendar(
         for d in days_all:
             c = ws_mgr.cell(row=2, column=col_idx, value=d)
             c.alignment = align_center
+            c.border = border_grey
             if d in days_weekend:
                  c.font = Font(bold=True, color="FF0000")
             col_idx += 1
@@ -624,7 +695,8 @@ def export_merged_calendar(
         c = ws_mgr.cell(row=2, column=col_idx + i, value=h)
         c.font = font_bold
         c.alignment = align_center
-        # Merge row 1 for "Totaux"
+        c.border = border_grey
+    # Merge row 1 for "Totaux"
     ws_mgr.merge_cells(start_row=1, start_column=col_idx, end_row=1, end_column=col_idx + 3)
     ws_mgr.cell(row=1, column=col_idx, value="Totaux Période").font = font_bold
     ws_mgr.cell(row=1, column=col_idx).alignment = align_center
@@ -634,37 +706,57 @@ def export_merged_calendar(
     row_idx = 3
     for name in active_people:
         ws_mgr.cell(row=row_idx, column=1, value=name).font = font_bold
+        ws_mgr.cell(row=row_idx, column=1).border = border_grey
         
         current_col = 2
         count_j = 0
         count_n = 0
         count_s = 0
-        count_we = 0 # weekends worked (at least one shift)
+        count_we = 0  # weekends worked (at least one shift)
         
         for w in range(1, weeks + 1):
             worked_this_we = False
-            for d in days_all:
+            for d_idx, d in enumerate(days_all):
                 val = full_map.get((name, w, d), "")
                 cell = ws_mgr.cell(row=row_idx, column=current_col, value=val)
                 cell.alignment = align_center
+                cell.border = border_grey
+                
+                # Week separator: black double border on left of first column of each week
+                if current_col in week_start_cols:
+                    cell.border = Border(
+                        left=black_double,
+                        right=grey_thin,
+                        top=grey_thin,
+                        bottom=grey_thin
+                    )
                 
                 # Counters
-                if "D" in val: count_j += 1
-                if "N" in val: count_n += 1
-                if "S" in val: count_s += 1
+                if "D" in val:
+                    count_j += 1
+                if "N" in val:
+                    count_n += 1
+                if "S" in val:
+                    count_s += 1
                 
                 # Weekend check
                 if d in days_weekend and val:
                     worked_this_we = True
                 
-                # Styling (Existing logic)
-                if val == "N": cell.fill = fill_night
+                # Styling (fills)
+                if val == "N":
+                    cell.fill = fill_night
                 elif val == "D":
-                     if d in days_weekend: cell.fill = fill_solo
-                     else: cell.fill = fill_day
-                elif val == "S": cell.fill = fill_solo
-                elif "N" in val and "D" in val: cell.fill = fill_24h
-                elif "D+N" in val: cell.fill = fill_24h
+                    if d in days_weekend:
+                        cell.fill = fill_solo
+                    else:
+                        cell.fill = fill_day
+                elif val == "S":
+                    cell.fill = fill_solo
+                elif "N" in val and "D" in val:
+                    cell.fill = fill_24h
+                elif "D+N" in val:
+                    cell.fill = fill_24h
                 
                 current_col += 1
             
@@ -676,6 +768,7 @@ def export_merged_calendar(
             c = ws_mgr.cell(row=row_idx, column=current_col + i, value=val)
             c.alignment = align_center
             c.font = font_bold
+            c.border = border_grey
 
         row_idx += 1
 
@@ -710,28 +803,185 @@ def export_merged_calendar(
         for col in range(1, 9):
             ws_p.column_dimensions[get_column_letter(col)].width = 12
 
-    # --- 3. Stats ---
-    ws_stats = wb.create_sheet("Stats")
-    ws_stats.append(["Metrique", "Valeur"])
-    total_assigned = len(full_map)
-    ws_stats.append(["Total Assignments (Days)", total_assigned])
+    # ============================================================
+    # --- 3. SYNTHÈSE (Per-Person Summary) ---
+    # ============================================================
+    ws_syn = wb.create_sheet("Synthèse")
+    
+    # Headers - include weekend if available
+    has_weekend = weekend_result and weekend_result.assignments
+    if has_weekend:
+        headers = ["Nom", "Jours", "Soirs", "Nuits", "Admin", "WE Shifts", "Total", "Cible", "Écart", "Nb_EDO"]
+    else:
+        headers = ["Nom", "Jours", "Soirs", "Nuits", "Admin", "Total", "Cible", "Écart", "Nb_EDO"]
+    
+    ws_syn.append(headers)
+    for cell in ws_syn[1]:
+        cell.font = font_white
+        cell.fill = fill_header
+        cell.alignment = align_center
+    
+    # Count shifts per person
+    we_counts = {}  # person -> weekend shift count
+    if has_weekend:
+        for a in weekend_result.assignments:
+            we_counts[a.person.name] = we_counts.get(a.person.name, 0) + 1
+    
+    for p in sorted(people, key=lambda x: x.name):
+        if p.workdays_per_week == 0:
+            continue
+        
+        # Count weekday shifts
+        jours = sum(1 for k, v in full_map.items() if k[0] == p.name and "D" in v and k[2] not in days_weekend)
+        soirs = sum(1 for k, v in full_map.items() if k[0] == p.name and v == "S")
+        nuits = sum(1 for k, v in full_map.items() if k[0] == p.name and "N" in v)
+        admin = 0  # Not currently tracked
+        we_shifts = we_counts.get(p.name, 0)
+        
+        total = jours + soirs + nuits + admin
+        edo_weeks = sum(1 for w in range(1, weeks + 1) if p.name in edo_plan.plan.get(w, set()))
+        cible = p.workdays_per_week * weeks - edo_weeks
+        ecart = total - cible
+        
+        if has_weekend:
+            row = [p.name, jours, soirs, nuits, admin, we_shifts, total, cible, ecart, edo_weeks]
+        else:
+            row = [p.name, jours, soirs, nuits, admin, total, cible, ecart, edo_weeks]
+        
+        ws_syn.append(row)
+        
+        # Color-code écart: red for negative, green for positive
+        last_row = ws_syn.max_row
+        ecart_col = 9 if has_weekend else 8
+        if ecart < 0:
+            ws_syn.cell(row=last_row, column=ecart_col).font = Font(color="FF0000", bold=True)
+        elif ecart > 0:
+            ws_syn.cell(row=last_row, column=ecart_col).font = Font(color="00AA00", bold=True)
+    
+    # Add summary row at bottom
+    summary_row = ws_syn.max_row + 1
+    ws_syn.cell(row=summary_row, column=1, value="TOTAL").font = Font(bold=True)
+    
+    # Sum each numeric column
+    if has_weekend:
+        for col_idx in range(2, 11):  # Columns B through J
+            if col_idx <= 6:  # Numeric columns (Jours, Soirs, Nuits, Admin, WE, Total)
+                col_letter = get_column_letter(col_idx)
+                ws_syn.cell(row=summary_row, column=col_idx, 
+                           value=f"=SUM({col_letter}2:{col_letter}{summary_row-1})")
+            ws_syn.cell(row=summary_row, column=col_idx).font = Font(bold=True)
+    else:
+        for col_idx in range(2, 10):  # Columns B through I
+            if col_idx <= 5:  # Numeric columns
+                col_letter = get_column_letter(col_idx)
+                ws_syn.cell(row=summary_row, column=col_idx, 
+                           value=f"=SUM({col_letter}2:{col_letter}{summary_row-1})")
+            ws_syn.cell(row=summary_row, column=col_idx).font = Font(bold=True)
+    
+    # Style summary row
+    fill_summary = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
+    for col_idx in range(1, (11 if has_weekend else 10)):
+        ws_syn.cell(row=summary_row, column=col_idx).fill = fill_summary
+    
+    # Column widths
+    ws_syn.column_dimensions["A"].width = 20
+    
+    # ============================================================
+    # --- 4. TECHNIQUE (Validation Breakdown) ---
+    # ============================================================
+    ws_tech = wb.create_sheet("Technique")
+    
+    # Section 1: Validation counts
+    ws_tech.append(["Métrique", "Valeur"])
+    for cell in ws_tech[1]:
+        cell.font = font_white
+        cell.fill = fill_header
+    
     if validation:
-        ws_stats.append(["Total Violations", len(validation.violations)])
-        ws_stats.append(["Unfilled Slots", validation.slots_vides])
-        ws_stats.append(["Critical Issues", sum(1 for v in validation.violations if v.severity == "critical")])
+        ws_tech.append(["Slots_vides", validation.slots_vides])
+        ws_tech.append(["doublons_jour", validation.doublons_jour])
+        ws_tech.append(["Nuit_suivie_travail", validation.nuit_suivie_travail])
+        ws_tech.append(["Soir_vers_Jour", validation.soir_vers_jour])
+        ws_tech.append(["Ecarts_hebdo_jours", validation.ecarts_hebdo_jours])
+        ws_tech.append(["Ecarts_horizon_personnes", validation.ecarts_horizon_personnes])
+        ws_tech.append(["Violations_48h", validation.rolling_48h_violations])
+    
+    # Section 2: Cohort equity
+    ws_tech.append([])
+    ws_tech.append(["Équité par cohorte", ""])
+    ws_tech[ws_tech.max_row][0].font = font_bold
+    
+    ws_tech.append(["Cohorte", "σ Nuits", "σ Soirs"])
+    for cell in ws_tech[ws_tech.max_row]:
+        cell.font = font_bold
+    
+    if fairness:
+        for cohort, night_std in fairness.night_std_by_cohort.items():
+            eve_std = fairness.eve_std_by_cohort.get(cohort, 0)
+            ws_tech.append([cohort, f"{night_std:.2f}", f"{eve_std:.2f}"])
+    
+    # Column widths
+    ws_tech.column_dimensions["A"].width = 25
+    ws_tech.column_dimensions["B"].width = 15
+    ws_tech.column_dimensions["C"].width = 15
 
     # --- 4. Gaps (Unfilled Shifts) ---
-    if validation and validation.slots_vides > 0:
+    # Include both unfilled_slot and incomplete_pair violations
+    gap_types = {"unfilled_slot", "incomplete_pair"}
+    gaps = [v for v in (validation.violations if validation else []) if v.type in gap_types]
+    if gaps:
         ws_gaps = wb.create_sheet("Manques (Gaps)")
-        ws_gaps.append(["Semaine", "Jour", "Poste", "Message"])
+        ws_gaps.append(["Semaine", "Jour", "Poste", "Type", "Message"])
         for cell in ws_gaps[1]:
             cell.font = font_bold
+        
+        type_labels = {
+            "unfilled_slot": "Slot vide",
+            "incomplete_pair": "Paire incomplète"
+        }
+        for v in gaps:
+            ws_gaps.append([v.week, v.day, v.shift, type_labels.get(v.type, v.type), v.message])
             
-        unfilled = [v for v in validation.violations if v.type == "unfilled_slot"]
-        for v in unfilled:
-            ws_gaps.append([v.week, v.day, v.shift, v.message])
-            
-        ws_gaps.column_dimensions["D"].width = 50
+        ws_gaps.column_dimensions["E"].width = 50
+    
+    # --- 5. Weekend Sheet ---
+    if weekend_result and weekend_result.assignments:
+        ws_we = wb.create_sheet("Week-end")
+        
+        # Header
+        ws_we.append(["Semaine", "Sam J", "Sam N", "Dim J", "Dim N"])
+        for cell in ws_we[1]:
+            cell.font = font_bold
+            cell.alignment = align_center
+        
+        # Build weekend matrix by week
+        we_data = {}  # {week: {day_shift: [names]}}
+        for a in weekend_result.assignments:
+            key = (a.week, a.day, a.shift)
+            we_data.setdefault(key, []).append(a.person.name)
+        
+        for w in range(1, weeks + 1):
+            sam_d = ", ".join(we_data.get((w, "Sam", "D"), ["-"]))
+            sam_n = ", ".join(we_data.get((w, "Sam", "N"), ["-"]))
+            dim_d = ", ".join(we_data.get((w, "Dim", "D"), ["-"]))
+            dim_n = ", ".join(we_data.get((w, "Dim", "N"), ["-"]))
+            ws_we.append([f"S{w}", sam_d, sam_n, dim_d, dim_n])
+        
+        # Column widths
+        for col in ["B", "C", "D", "E"]:
+            ws_we.column_dimensions[col].width = 30
+    
+    # --- 6. Violations Breakdown ---
+    if validation and validation.violations:
+        ws_viol = wb.create_sheet("Violations")
+        ws_viol.append(["Type", "Sévérité", "Semaine", "Jour", "Poste", "Personne", "Message"])
+        for cell in ws_viol[1]:
+            cell.font = font_bold
+        
+        for v in validation.violations:
+            ws_viol.append([v.type, v.severity, v.week, v.day, v.shift, v.person, v.message])
+        
+        ws_viol.column_dimensions["G"].width = 60
     
     # Save
     if isinstance(output, (str, Path)):

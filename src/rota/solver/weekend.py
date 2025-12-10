@@ -1,7 +1,9 @@
 """Weekend solver module using CP-SAT."""
-from dataclasses import dataclass, field
-from typing import List, Dict, Tuple, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
+
 from ortools.sat.python import cp_model
+
 from rota.models.person import Person
 
 

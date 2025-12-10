@@ -1,18 +1,16 @@
 """Excel export functionality for schedules."""
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Union
 import io
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-from openpyxl.formatting.rule import CellIsRule
 
 from rota.models.person import Person
 from rota.models.schedule import Schedule
-from rota.models.shift import ShiftType, WEEKDAYS, WEEKEND, ALL_DAYS
-
+from rota.models.shift import WEEKDAYS
 
 # Color scheme for shifts
 SHIFT_COLORS = {

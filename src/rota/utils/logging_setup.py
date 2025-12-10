@@ -10,14 +10,12 @@ Levels:
     WARNING (30): Soft constraint violations
     ERROR (40): Hard constraint failures, exceptions
 """
-import logging
 import functools
+import logging
 import sys
-from pathlib import Path
 from logging.handlers import RotatingFileHandler
-from typing import Optional, Any, Callable
-from datetime import datetime
-
+from pathlib import Path
+from typing import Any, Callable, Optional
 
 # Custom TRACE level (below DEBUG)
 TRACE = 5

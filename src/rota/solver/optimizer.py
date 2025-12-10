@@ -3,19 +3,19 @@ Multi-Seed Optimizer
 ====================
 Runs multiple solver attempts with different seeds and keeps the best.
 """
-import random
-import time
-from typing import List, Dict, Optional, Tuple
 import concurrent.futures
 import os
+import random
+import time
+from typing import Dict, List, Optional, Tuple
 
-from rota.models.person import Person
 from rota.models.constraints import SolverConfig
-from rota.solver.pairs import solve_pairs, PairSchedule
-from rota.solver.staffing import derive_staffing, WeekStaffing
-from rota.solver.edo import build_edo_plan, EDOPlan
-from rota.solver.validation import validate_schedule, calculate_fairness, score_solution
-from rota.utils.logging_setup import get_logger, SolverLogger
+from rota.models.person import Person
+from rota.solver.edo import EDOPlan, build_edo_plan
+from rota.solver.pairs import PairSchedule, solve_pairs
+from rota.solver.staffing import WeekStaffing, derive_staffing
+from rota.solver.validation import calculate_fairness, score_solution, validate_schedule
+from rota.utils.logging_setup import SolverLogger, get_logger
 
 logger = get_logger("rota.solver.optimizer")
 slog = SolverLogger("rota.solver.optimizer")

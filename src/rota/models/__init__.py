@@ -1,8 +1,8 @@
 # rota/models - Data models for the scheduling system
+from .constraints import CoverageTarget, SolverConfig
 from .person import Person
-from .shift import ShiftType, WEEKDAYS, WEEKEND, ALL_DAYS
-from .schedule import Schedule, Assignment
-from .constraints import SolverConfig, CoverageTarget
+from .schedule import Assignment, Schedule
+from .shift import ALL_DAYS, WEEKDAYS, WEEKEND, ShiftType
 
 __all__ = [
     "Person",

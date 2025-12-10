@@ -1,6 +1,7 @@
 """Schedule and assignment models."""
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import pandas as pd
 
 from .shift import ShiftType, normalize_day

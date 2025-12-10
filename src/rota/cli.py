@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import argparse
 import json
-from pathlib import Path
 from typing import Any, Dict
 
 from rota.engine.solve_legacy import solve  # lazy-imports legacy internally
+
 
 def _build_cfg(args: argparse.Namespace) -> Dict[str, Any]:
     cfg: Dict[str, Any] = {}

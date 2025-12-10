@@ -1,0 +1,3255 @@
+{
+  "meta": {
+    "timestamp": "2025-12-08T16:47:47.692244",
+    "run_name": "run_20251208_164747"
+  },
+  "config": {
+    "weeks": 12,
+    "time_limit_seconds": 60,
+    "tries": 2,
+    "seed": 1765208804,
+    "forbid_night_to_day": true,
+    "edo_enabled": true,
+    "max_nights_sequence": 3,
+    "fairness_mode": "by-wd"
+  },
+  "weights": {
+    "night_fairness": 10,
+    "eve_fairness": 3,
+    "deviation": 5,
+    "clopening": 1
+  },
+  "team": {
+    "count": 16,
+    "by_workdays": {
+      "4j": 12,
+      "3j": 4
+    }
+  },
+  "solver": {
+    "status": "feasible",
+    "solve_time_seconds": 60.50897002220154,
+    "internal_score": 1165.0,
+    "stats": {
+      "night_spread": 0,
+      "soir_spread": 0,
+      "solve_time": 60.50897002220154,
+      "best_seed": 1765208804,
+      "tries": 2
+    }
+  },
+  "validation": {
+    "Slots_vides": 68,
+    "doublons_jour": 0,
+    "Nuit_suivie_travail": 0,
+    "Soir_vers_Jour": 0,
+    "Ecarts_hebdo_jours": 97,
+    "Ecarts_horizon_personnes": 0
+  },
+  "fairness": {
+    "night_std": 0.0,
+    "eve_std": 0.0,
+    "by_cohort": {
+      "nights": {
+        "4j": 0.0,
+        "3j": 0.0
+      },
+      "evenings": {
+        "4j": 0.0,
+        "3j": 0.0
+      }
+    }
+  },
+  "cohort_summary": {
+    "4j": {
+      "count": 12,
+      "nights": {
+        "min": 8,
+        "max": 8,
+        "std": 0.0
+      },
+      "evenings": {
+        "min": 0,
+        "max": 0,
+        "std": 0.0
+      }
+    },
+    "3j": {
+      "count": 4,
+      "nights": {
+        "min": 6,
+        "max": 6,
+        "std": 0.0
+      },
+      "evenings": {
+        "min": 0,
+        "max": 0,
+        "std": 0.0
+      }
+    }
+  },
+  "person_stats": [
+    {
+      "name": "P4_1",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_2",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_3",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_4",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_5",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 31,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 39,
+      "target": 42,
+      "delta": -3,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_6",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_7",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_8",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_9",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_10",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_11",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P4_12",
+      "workdays_per_week": 4,
+      "edo_eligible": true,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 30,
+        "S": 0,
+        "N": 8,
+        "A": 0
+      },
+      "total": 38,
+      "target": 42,
+      "delta": -4,
+      "edo_weeks": 6
+    },
+    {
+      "name": "P3_1",
+      "workdays_per_week": 3,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 27,
+        "S": 0,
+        "N": 6,
+        "A": 0
+      },
+      "total": 33,
+      "target": 36,
+      "delta": -3,
+      "edo_weeks": 0
+    },
+    {
+      "name": "P3_2",
+      "workdays_per_week": 3,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 27,
+        "S": 0,
+        "N": 6,
+        "A": 0
+      },
+      "total": 33,
+      "target": 36,
+      "delta": -3,
+      "edo_weeks": 0
+    },
+    {
+      "name": "P3_3",
+      "workdays_per_week": 3,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 27,
+        "S": 0,
+        "N": 6,
+        "A": 0
+      },
+      "total": 33,
+      "target": 36,
+      "delta": -3,
+      "edo_weeks": 0
+    },
+    {
+      "name": "P3_4",
+      "workdays_per_week": 3,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 99,
+      "team": null,
+      "shifts": {
+        "J": 27,
+        "S": 0,
+        "N": 6,
+        "A": 0
+      },
+      "total": 33,
+      "target": 36,
+      "delta": -3,
+      "edo_weeks": 0
+    }
+  ],
+  "assignments": [
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_10",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_1",
+      "person_b": null
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_9",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_1",
+      "person_b": null
+    },
+    {
+      "week": 1,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 1,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 1,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 1,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 1,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 1,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": null
+    },
+    {
+      "week": 1,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 1,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_9",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 1,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 1,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 1,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 1,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": null
+    },
+    {
+      "week": 1,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 1,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_8",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 1,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 1,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 1,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 1,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": null
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_7",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": null
+    },
+    {
+      "week": 2,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 2,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 2,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 2,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 2,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 2,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_12",
+      "person_b": null
+    },
+    {
+      "week": 2,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 2,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 2,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 2,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 2,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 2,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": null
+    },
+    {
+      "week": 2,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 2,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 2,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 2,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 2,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 2,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": null
+    },
+    {
+      "week": 2,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 2,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 2,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 2,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 2,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 2,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": null
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_10",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": null
+    },
+    {
+      "week": 3,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 3,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 3,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 3,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_4",
+      "person_b": null
+    },
+    {
+      "week": 3,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 3,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": null
+    },
+    {
+      "week": 3,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 3,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 3,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 3,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 3,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": null
+    },
+    {
+      "week": 3,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 3,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_9",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 3,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 3,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_7",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 3,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": null
+    },
+    {
+      "week": 3,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 3,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 3,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 3,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 3,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 3,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": null
+    },
+    {
+      "week": 4,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 4,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 4,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 4,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 4,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 4,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": null
+    },
+    {
+      "week": 4,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 4,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 4,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 4,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 4,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 4,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_7",
+      "person_b": null
+    },
+    {
+      "week": 4,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 4,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 4,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 4,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 4,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 4,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": null
+    },
+    {
+      "week": 4,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 4,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 4,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 4,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_8",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 4,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 4,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": null
+    },
+    {
+      "week": 4,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 4,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 4,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 4,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 4,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 4,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": null
+    },
+    {
+      "week": 5,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 5,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 5,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 5,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 5,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 5,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_2",
+      "person_b": null
+    },
+    {
+      "week": 5,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 5,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 5,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 5,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 5,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 5,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": null
+    },
+    {
+      "week": 5,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 5,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 5,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 5,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 5,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 5,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_3",
+      "person_b": null
+    },
+    {
+      "week": 5,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 5,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 5,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 5,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 5,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 5,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": null
+    },
+    {
+      "week": 5,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 5,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 5,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 5,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 5,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 5,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_4",
+      "person_b": null
+    },
+    {
+      "week": 6,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 6,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 6,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 6,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 6,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 6,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": null
+    },
+    {
+      "week": 6,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 6,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 6,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 6,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 6,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 6,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 6,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 6,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 6,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 6,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_12",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 6,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_4",
+      "person_b": null
+    },
+    {
+      "week": 6,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 6,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 6,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 6,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 6,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 6,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": null
+    },
+    {
+      "week": 6,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 6,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 6,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 6,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 6,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 6,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_3",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 7,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 7,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 7,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 7,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 7,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_8",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 7,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 7,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 7,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 7,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 7,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 7,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 7,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_4",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 7,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_7",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 7,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 7,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 7,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 7,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 7,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": null
+    },
+    {
+      "week": 7,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 7,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 7,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P3_1",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 7,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 7,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": null
+    },
+    {
+      "week": 8,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 8,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 8,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_5",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 8,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 8,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 8,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": null
+    },
+    {
+      "week": 8,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 8,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 8,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 8,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 8,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 8,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": null
+    },
+    {
+      "week": 8,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 8,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 8,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_7",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 8,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 8,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 8,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": null
+    },
+    {
+      "week": 8,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 8,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 8,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_8",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 8,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 8,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 8,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": null
+    },
+    {
+      "week": 8,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 8,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 8,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 8,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 8,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 8,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_7",
+      "person_b": null
+    },
+    {
+      "week": 9,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 9,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 9,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 9,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 9,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 9,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_4",
+      "person_b": null
+    },
+    {
+      "week": 9,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 9,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 9,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 9,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 9,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 9,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_2",
+      "person_b": null
+    },
+    {
+      "week": 9,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 9,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 9,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 9,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_10",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 9,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 9,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_2",
+      "person_b": null
+    },
+    {
+      "week": 9,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 9,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 9,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_7",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 9,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 9,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 9,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_9",
+      "person_b": null
+    },
+    {
+      "week": 9,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 9,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 9,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P3_1",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 9,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 9,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 9,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_7",
+      "person_b": null
+    },
+    {
+      "week": 10,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 10,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 10,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 10,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 10,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 10,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_12",
+      "person_b": null
+    },
+    {
+      "week": 10,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 10,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 10,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 10,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 10,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 10,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_12",
+      "person_b": null
+    },
+    {
+      "week": 10,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 10,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 10,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 10,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 10,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 10,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_1",
+      "person_b": null
+    },
+    {
+      "week": 10,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 10,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 10,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 10,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 10,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 10,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": null
+    },
+    {
+      "week": 10,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 10,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 10,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 10,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P3_3",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 10,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": null
+    },
+    {
+      "week": 11,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 11,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 11,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 11,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 11,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_10",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 11,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": null
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_6",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": null
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": null
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_8",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_11",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_1",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": null
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_7",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_12",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": null
+    },
+    {
+      "week": 12,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_3"
+    },
+    {
+      "week": 12,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_5"
+    },
+    {
+      "week": 12,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_6",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 12,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P3_2",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 12,
+      "day": "Lun",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 12,
+      "day": "Lun",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_12",
+      "person_b": null
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_4"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_5",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_11",
+      "person_b": "P3_1"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_6",
+      "person_b": "P3_2"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P3_3",
+      "person_b": null
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_3",
+      "person_b": "P4_8"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_9",
+      "person_b": "P4_10"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_5",
+      "person_b": "P4_7"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_4",
+      "person_b": null
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_2",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_8",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_12",
+      "person_b": "P3_4"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P3_2",
+      "person_b": "P3_3"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": null
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "P4_1",
+      "person_b": "P4_2"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "P4_4",
+      "person_b": "P4_6"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 2,
+      "person_a": "P4_7",
+      "person_b": "P4_9"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 3,
+      "person_a": "P4_10",
+      "person_b": "P4_11"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "N",
+      "slot": 0,
+      "person_a": "P4_8",
+      "person_b": "P4_12"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "S",
+      "slot": 0,
+      "person_a": "P4_3",
+      "person_b": null
+    }
+  ]
+}

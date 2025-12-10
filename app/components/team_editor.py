@@ -1,10 +1,11 @@
 """Team editor UI component for Streamlit."""
-from typing import List, Optional, Callable
+from typing import Callable, List, Optional
+
 import pandas as pd
 import streamlit as st
 
-from rota.models.person import Person
 from rota.io.csv_loader import load_team, team_to_dataframe
+from rota.models.person import Person
 
 
 def render_team_editor(

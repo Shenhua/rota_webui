@@ -6,8 +6,8 @@ Fixed staffing based on specification:
 - Nuit (N): 1 pair = 2 people per day
 - Soir (S): 1 solo person per day
 """
-from typing import Dict, List, Set
 from dataclasses import dataclass
+from typing import Dict, List, Set
 
 from rota.models.person import Person
 from rota.utils.logging_setup import get_logger, log_function_call

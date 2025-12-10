@@ -12,16 +12,16 @@ Key model:
 - Variables: assign[person][week][day][shift] = 1 if person works this shift
 """
 import time
-import logging
-from typing import List, Dict, Set, Tuple, Optional
 from dataclasses import dataclass, field
+from typing import Dict, List
+
 from ortools.sat.python import cp_model
 
+from rota.models.constraints import FairnessMode, SolverConfig
 from rota.models.person import Person
-from rota.models.constraints import SolverConfig, WeekendMode, FairnessMode
-from rota.solver.staffing import WeekStaffing, JOURS, PAIR_SHIFTS, SOLO_SHIFTS, SHIFT_HOURS
 from rota.solver.edo import EDOPlan
-from rota.utils.logging_setup import get_logger, SolverLogger
+from rota.solver.staffing import JOURS, SHIFT_HOURS, WeekStaffing
+from rota.utils.logging_setup import SolverLogger, get_logger
 
 logger = get_logger("rota.solver.engine")
 slog = SolverLogger("rota.solver.engine")

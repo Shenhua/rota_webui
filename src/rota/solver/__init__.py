@@ -1,9 +1,15 @@
 # rota/solver - OR-Tools CP-SAT scheduling solver
+from .edo import EDOPlan, build_edo_plan
 from .engine import solve
-from .pairs import solve_pairs, PairSchedule, PairAssignment
-from .staffing import derive_staffing, WeekStaffing, JOURS
-from .edo import build_edo_plan, EDOPlan
-from .validation import validate_schedule, calculate_fairness, score_solution, ValidationResult, FairnessMetrics
+from .pairs import PairAssignment, PairSchedule, solve_pairs
+from .staffing import JOURS, WeekStaffing, derive_staffing
+from .validation import (
+    FairnessMetrics,
+    ValidationResult,
+    calculate_fairness,
+    score_solution,
+    validate_schedule,
+)
 
 __all__ = [
     "solve",

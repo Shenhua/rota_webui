@@ -1,7 +1,7 @@
 """Solver configuration and constraint definitions."""
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 from enum import Enum
+from typing import Dict, List
 
 
 class FairnessMode(str, Enum):
@@ -75,7 +75,7 @@ class SolverConfig:
 
     def get_days(self) -> List[str]:
         """Get list of days to schedule based on weekend mode."""
-        from .shift import WEEKDAYS, ALL_DAYS
+        from .shift import ALL_DAYS, WEEKDAYS
         if self.weekend_mode == WeekendMode.DISABLED:
             return WEEKDAYS
         return ALL_DAYS

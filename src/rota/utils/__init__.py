@@ -1,12 +1,12 @@
 """Utilities package for Rota Optimizer."""
 from .logging_setup import (
-    setup_logging,
-    get_logger,
-    log_function_call,
-    log_constraint,
-    SolverLogger,
-    init_logging,
     TRACE,
+    SolverLogger,
+    get_logger,
+    init_logging,
+    log_constraint,
+    log_function_call,
+    setup_logging,
 )
 
 __all__ = [

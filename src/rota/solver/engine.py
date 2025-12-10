@@ -1,13 +1,14 @@
 """OR-Tools CP-SAT based scheduling solver."""
-import time
 import logging
-from typing import List, Dict, Optional, Tuple
+import time
+from typing import Dict, List, Optional
+
 from ortools.sat.python import cp_model
 
+from rota.models.constraints import FairnessMode, SolverConfig, WeekendMode
 from rota.models.person import Person
-from rota.models.shift import ShiftType, WEEKDAYS, WEEKEND, ALL_DAYS
-from rota.models.schedule import Schedule, Assignment
-from rota.models.constraints import SolverConfig, WeekendMode, FairnessMode
+from rota.models.schedule import Assignment, Schedule
+from rota.models.shift import ALL_DAYS, WEEKDAYS, ShiftType
 
 logger = logging.getLogger("rota.solver")
 

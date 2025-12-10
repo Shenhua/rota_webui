@@ -1,6 +1,7 @@
 """CSV loading and saving for team data."""
 from pathlib import Path
 from typing import List, Union
+
 import pandas as pd
 
 from rota.models.person import Person

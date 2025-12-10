@@ -1,12 +1,12 @@
 """Bridge module to connect the new solver to the legacy UI API."""
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, Optional
+
 import pandas as pd
 
-from rota.models.person import Person
-from rota.models.schedule import Schedule
-from rota.models.constraints import SolverConfig, WeekendMode, FairnessMode
 from rota.io.csv_loader import load_team
+from rota.models.constraints import FairnessMode, SolverConfig
+from rota.models.person import Person
 from rota.solver.engine import solve as ortools_solve
 
 

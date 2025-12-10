@@ -6,23 +6,29 @@ Pair-based scheduling with OR-Tools CP-SAT solver.
 import io
 import os
 import sys
-import streamlit as st
+
 import pandas as pd
+import streamlit as st
 
 # Add src to python path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 
-from rota.models.person import Person
-from rota.models.constraints import SolverConfig
-from rota.solver.pairs import solve_pairs
-from rota.solver.staffing import derive_staffing, JOURS
-from rota.solver.edo import build_edo_plan
-from rota.solver.validation import validate_schedule, calculate_fairness, score_solution
-from rota.solver.optimizer import optimize
-from rota.solver.weekend import WeekendSolver, WeekendConfig, validate_weekend_schedule
-from rota.io.pair_export import export_pairs_to_excel, export_pairs_to_csv, export_weekend_to_excel, export_merged_calendar
-from rota.io.results_export import export_results
 from rota.io.csv_loader import load_team
+from rota.io.pair_export import (
+    export_merged_calendar,
+    export_pairs_to_csv,
+    export_pairs_to_excel,
+    export_weekend_to_excel,
+)
+from rota.io.pdf_export import export_schedule_to_pdf
+from rota.io.results_export import export_results
+from rota.models.constraints import SolverConfig
+from rota.models.person import Person
+from rota.solver.edo import build_edo_plan
+from rota.solver.optimizer import optimize
+from rota.solver.staffing import JOURS, derive_staffing
+from rota.solver.validation import calculate_fairness, validate_schedule
+from rota.solver.weekend import WeekendConfig, WeekendSolver, validate_weekend_schedule
 from rota.utils.logging_setup import init_logging
 
 # Initialize logging at DEBUG for detailed verification
@@ -310,17 +316,20 @@ if True:
                         if staffing is None:
                             st.warning("⚠️ Détails du déficit non disponibles. Veuillez relancer le solveur.")
                         else:
+                            # Include both unfilled_slot and incomplete_pair
+                            gap_types = {"unfilled_slot", "incomplete_pair"}
                             for v in validation.violations:
-                                if v.type == "unfilled_slot":
+                                if v.type in gap_types:
                                     count = getattr(v, "count", 1)
-                                    people_needed = count * 2 if v.shift in ["D", "N"] else count
+                                    # For incomplete_pair: 1 person missing
+                                    people_needed = 1 if v.type == "incomplete_pair" else (count * 2 if v.shift in ["D", "N"] else count)
                                     shift_name = {"D": "Jour", "S": "Soir", "N": "Nuit"}.get(v.shift, v.shift)
                                     
                                     missing_data.append({
                                         "Semaine": v.week, 
                                         "Jour": v.day, 
                                         "Quart": shift_name,
-                                        "Créneaux": count,
+                                        "Type": "Paire incomplète" if v.type == "incomplete_pair" else "Slot vide",
                                         "Pers. à recruter": people_needed,
                                         "Message": v.message
                                     })
@@ -413,12 +422,33 @@ if True:
                             st.metric("σ Soirs", f"{fairness.eve_std:.2f}")
                         
                         st.caption(f"🌱 Seed gagnant: {best_seed}")
+                        
+                        # Violation breakdown by type
+                        if validation.violations:
+                            st.divider()
+                            st.write("**Détail des violations:**")
+                            viol_types = {}
+                            for v in validation.violations:
+                                viol_types[v.type] = viol_types.get(v.type, 0) + 1
+                            
+                            cols = st.columns(len(viol_types))
+                            for i, (vtype, count) in enumerate(viol_types.items()):
+                                type_labels = {
+                                    "unfilled_slot": "🔴 Slots vides",
+                                    "night_followed_work": "🟠 Nuit→Travail",
+                                    "clopening": "🟡 Soir→Jour",
+                                    "48h_exceeded": "🔴 48h dépassé",
+                                    "duplicate": "⚠️ Doublon"
+                                }
+                                label = type_labels.get(vtype, vtype)
+                                with cols[i]:
+                                    st.metric(label, count)
 
                     
                     st.divider()
                             
                     # Tabs
-                    t1, t2, t3, t4 = st.tabs(["📊 Matrice", "👥 ParPoste", "📈 Synthèse", "📥 Export"])
+                    t1, t2, t3, t4, t5, t6 = st.tabs(["📊 Matrice", "📅 Calendrier", "📈 Analytics", "👥 ParPoste", "📋 Synthèse", "📥 Export"])
                     
                     with t1:
                         st.subheader("Matrice des affectations")
@@ -476,10 +506,128 @@ if True:
                             }
                             return colors.get(val, "")
                         
-                        styled = df_matrix.style.applymap(color_shift)
+                        styled = df_matrix.style.map(color_shift)
                         st.dataframe(styled, use_container_width=True, height=450)
                     
                     with t2:
+                        # ============ CALENDAR TAB - Coverage Heatmap with Gaps ============
+                        st.subheader("📅 Calendrier de Couverture")
+                        st.caption("🟢 Couvert | 🟡 Partiel | 🔴 Manque")
+                        
+                        # Calculate coverage per day per week
+                        coverage_data = []
+                        for w in range(1, weeks + 1):
+                            row = {"Semaine": f"S{w}"}
+                            for d in JOURS:
+                                # Count assignments for this day
+                                day_assignments = [a for a in schedule.assignments if a.week == w and a.day == d]
+                                
+                                # Required slots (from staffing if available)
+                                req_d = req_pairs_D * 2  # D pairs = 2 people each
+                                req_s = req_solos_S      # S is solo
+                                req_n = req_pairs_N * 2  # N pairs = 2 people each
+                                total_required = req_d + req_s + req_n
+                                
+                                # Actual filled
+                                filled = sum(
+                                    (1 if a.person_a else 0) + (1 if a.person_b else 0)
+                                    for a in day_assignments
+                                )
+                                
+                                pct = (filled / total_required * 100) if total_required > 0 else 100
+                                if pct >= 100:
+                                    row[d] = "✅"
+                                elif pct >= 80:
+                                    row[d] = f"⚠️ {int(pct)}%"
+                                else:
+                                    row[d] = f"❌ {int(pct)}%"
+                            coverage_data.append(row)
+                        
+                        df_coverage = pd.DataFrame(coverage_data)
+                        
+                        # Color function for coverage
+                        def color_coverage(val):
+                            if "✅" in str(val):
+                                return "background-color: #D4EDDA; color: #155724;"
+                            elif "⚠️" in str(val):
+                                return "background-color: #FFF3CD; color: #856404;"
+                            elif "❌" in str(val):
+                                return "background-color: #F8D7DA; color: #721C24; font-weight: bold;"
+                            return ""
+                        
+                        styled_cov = df_coverage.style.map(color_coverage, subset=JOURS)
+                        st.dataframe(styled_cov, use_container_width=True, hide_index=True)
+                        
+                        # Show gap details if any
+                        if validation and validation.slots_vides > 0:
+                            st.error(f"🚨 **{validation.slots_vides} créneaux non pourvus**")
+                            with st.expander("Voir détails des manques", expanded=True):
+                                gaps = [v for v in validation.violations if v.type in {"unfilled_slot", "incomplete_pair"}]
+                                for v in gaps[:20]:  # Show first 20
+                                    st.write(f"• **S{v.week} {v.day}** - {v.shift}: {v.message}")
+                                if len(gaps) > 20:
+                                    st.write(f"... et {len(gaps) - 20} autres")
+                    
+                    with t3:
+                        # ============ ANALYTICS TAB - Charts ============
+                        st.subheader("📈 Analyse et Graphiques")
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Workload distribution pie chart
+                            st.write("**Répartition des quarts**")
+                            shift_counts = {"Jour": 0, "Soir": 0, "Nuit": 0}
+                            for a in schedule.assignments:
+                                if a.shift == "D":
+                                    shift_counts["Jour"] += (1 if a.person_a else 0) + (1 if a.person_b else 0)
+                                elif a.shift == "S":
+                                    shift_counts["Soir"] += 1 if a.person_a else 0
+                                elif a.shift == "N":
+                                    shift_counts["Nuit"] += (1 if a.person_a else 0) + (1 if a.person_b else 0)
+                            
+                            import plotly.express as px
+                            fig_pie = px.pie(
+                                values=list(shift_counts.values()),
+                                names=list(shift_counts.keys()),
+                                color_discrete_sequence=["#DDEEFF", "#FFE4CC", "#E6CCFF"]
+                            )
+                            fig_pie.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
+                            st.plotly_chart(fig_pie, use_container_width=True)
+                        
+                        with col2:
+                            # Weekly coverage line chart
+                            st.write("**Couverture par semaine**")
+                            weekly_data = []
+                            for w in range(1, weeks + 1):
+                                week_assignments = [a for a in schedule.assignments if a.week == w]
+                                filled = sum(
+                                    (1 if a.person_a else 0) + (1 if a.person_b else 0)
+                                    for a in week_assignments
+                                )
+                                required = 5 * (req_pairs_D * 2 + req_solos_S + req_pairs_N * 2)  # 5 days
+                                pct = (filled / required * 100) if required > 0 else 100
+                                weekly_data.append({"Semaine": w, "Couverture %": pct})
+                            
+                            df_weekly = pd.DataFrame(weekly_data)
+                            st.line_chart(df_weekly.set_index("Semaine"))
+                        
+                        # Fairness bar chart
+                        st.write("**Équité par cohorte (σ)**")
+                        if fairness:
+                            cohort_data = []
+                            for cohort in fairness.night_std_by_cohort:
+                                cohort_data.append({
+                                    "Cohorte": cohort,
+                                    "σ Nuits": fairness.night_std_by_cohort.get(cohort, 0),
+                                    "σ Soirs": fairness.eve_std_by_cohort.get(cohort, 0)
+                                })
+                            df_fairness = pd.DataFrame(cohort_data)
+                            st.bar_chart(df_fairness.set_index("Cohorte"))
+                        else:
+                            st.info("Données d'équité non disponibles")
+                    
+                    with t4:
                         st.subheader("Affectations par poste (paires)")
                         for w in range(1, min(weeks+1, 5)):
                             st.write(f"**Semaine {w}**")
@@ -496,7 +644,7 @@ if True:
                                 pairs_data.append(row)
                             st.dataframe(pd.DataFrame(pairs_data), use_container_width=True, hide_index=True)
                     
-                    with t3:
+                    with t5:
                         st.subheader("Statistiques par personne")
                         
                         stats_data = []
@@ -528,7 +676,7 @@ if True:
                                 return "background-color: #E4E4FF; color: #00D;"
                             return ""
                         
-                        styled_stats = df_stats.style.applymap(color_delta, subset=["Δ"])
+                        styled_stats = df_stats.style.map(color_delta, subset=["Δ"])
                         st.dataframe(styled_stats, use_container_width=True, hide_index=True)
                         
                         # Fairness by cohort
@@ -539,7 +687,7 @@ if True:
                             cohort_data.append({"Cohorte": cid, "σ Nuits": f"{std_n:.2f}", "σ Soirs": f"{std_e:.2f}"})
                         st.dataframe(pd.DataFrame(cohort_data), use_container_width=True, hide_index=True)
                     
-                    with t4:
+                    with t6:
                         st.subheader("Téléchargements")
                         col1, col2 = st.columns(2)
                         
@@ -586,6 +734,26 @@ if True:
                                 filename,
                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             )
+                        
+                        # PDF Export
+                        st.divider()
+                        st.subheader("📄 Export PDF")
+                        
+                        pdf_buffer = io.BytesIO()
+                        weekend_for_pdf = st.session_state.get("w_result") if should_merge else None
+                        export_schedule_to_pdf(
+                            schedule, people, edo_plan, pdf_buffer,
+                            validation=validation, fairness=fairness,
+                            weekend_result=weekend_for_pdf,
+                            config={"weeks": weeks, "tries": tries, "seed": best_seed, "edo_enabled": edo_enabled}
+                        )
+                        
+                        st.download_button(
+                            "📄 Télécharger PDF (Rapport)",
+                            pdf_buffer.getvalue(),
+                            "planning_rapport.pdf",
+                            "application/pdf"
+                        )
                 else:
                     st.error(f"❌ Pas de solution trouvée: {schedule.status}")
 

@@ -1,6 +1,6 @@
 """Configuration for the scheduling solver - re-export from models."""
 # Backwards compatibility: re-export from new location
-from rota.models.constraints import SolverConfig, FairnessMode, WeekendMode, CoverageTarget
+from rota.models.constraints import CoverageTarget, FairnessMode, SolverConfig, WeekendMode
 
 # Legacy alias
 SolveConfig = SolverConfig

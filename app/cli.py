@@ -1,5 +1,7 @@
 import argparse
+
 from rota.engine.solve_legacy import solve
+
 
 def main():
     p = argparse.ArgumentParser()

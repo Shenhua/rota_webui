@@ -1,8 +1,8 @@
 """Consolidated normalization utilities for data handling."""
-from typing import List, Optional
 import pandas as pd
 
-from rota.models.shift import ShiftType, normalize_day as _normalize_day, DAY_ALIASES
+from rota.models.shift import ShiftType
+from rota.models.shift import normalize_day as _normalize_day
 
 
 def normalize_day(val: str) -> str:

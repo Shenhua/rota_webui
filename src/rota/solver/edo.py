@@ -3,8 +3,8 @@ EDO (Earned Day Off) System
 ===========================
 Manages EDO allocation with 50/50 alternation by week.
 """
-from typing import Dict, List, Set, Tuple, Optional
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Set, Tuple
 
 from rota.models.person import Person
 from rota.utils.logging_setup import get_logger, log_function_call

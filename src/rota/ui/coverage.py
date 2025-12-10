@@ -1,6 +1,8 @@
 
 from __future__ import annotations
-from typing import Dict, List, Tuple
+
+from typing import Dict, List
+
 import pandas as pd
 
 DAYS7 = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
@@ -138,7 +140,7 @@ def style_rag_and_extras(df: pd.DataFrame, show_extras: bool = True):
     styler = df.style
     # RAG sur Ecart (J/S/N uniquement)
     mask_jsn = df["Poste"].isin(SHIFTS_JSN)
-    styler = styler.applymap(lambda v: _bg_rag(v), subset=pd.IndexSlice[mask_jsn, ["Ecart"]])
+    styler = styler.map(lambda v: _bg_rag(v), subset=pd.IndexSlice[mask_jsn, ["Ecart"]])
 
     if show_extras:
         # Teintes sur la colonne Poste (et Assignes) pour A/OFF/EDO
@@ -152,7 +154,7 @@ def style_rag_and_extras(df: pd.DataFrame, show_extras: bool = True):
             return colors
         for col in ["Poste", "Assignes"]:
             if col in df.columns:
-                styler = styler.apply(lambda _: _bg_extras(col), axis=0, subset=[col])
+                styler = styler.apply(_bg_extras, axis=0, subset=[col])
     return styler
 
 # --- Back-compat aliases (imported by older UI code) ---
