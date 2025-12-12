@@ -15,6 +15,7 @@ def render_sidebar():
     uploaded_file = st.sidebar.file_uploader("Charger CSV", type=["csv"], key="team_csv_uploader")
     
     # Load team
+    # Load team
     if uploaded_file:
         try:
             df = pd.read_csv(uploaded_file)
@@ -25,14 +26,16 @@ def render_sidebar():
             st.sidebar.error(f"Erreur: {e}")
             people = []
     else:
-        # Demo mode
-        if "people" not in st.session_state or not st.session_state.people:
-            people = [Person(name=f"P4_{i+1}", workdays_per_week=4, edo_eligible=True) for i in range(12)] + \
-                     [Person(name=f"P3_{i+1}", workdays_per_week=3, edo_eligible=False) for i in range(4)]
-            st.session_state.people = people
-            st.sidebar.info("ℹ️ Mode démo (16 p.)")
+        # Check session state but DO NOT auto-populate demo data
+        if "people" in st.session_state and st.session_state.people:
+             people = st.session_state.people
         else:
-            people = st.session_state.people
+             people = []
+             st.sidebar.info("ℹ️ Veuillez charger un fichier CSV")
+
+    # Show team editor in expander (only if people exist)
+
+
     
     # Show team editor in expander
     if people:
@@ -106,53 +109,8 @@ def render_sidebar():
     
     st.sidebar.divider()
     
-    # ============ SECTION 2: STUDY & OPTIMIZATION ============
-    st.sidebar.header("🚀 Optimisation")
-    
-    # Check for existing study
-    from app.components.utils import get_solver_config, get_custom_staffing, get_weekend_config
-    solver_cfg = get_solver_config()
-    custom_staffing = get_custom_staffing()
-    weekend_config = get_weekend_config()
-    
-    if people:
-        from rota.solver.study_manager import StudyManager, compute_study_hash
-        manager = StudyManager()
-        study_hash = compute_study_hash(solver_cfg, people, custom_staffing, weekend_config)
-        
-        # DEBUG: Show hash and available studies
-        all_studies = manager.list_studies(limit=3)
-        st.sidebar.caption(f"🔍 Hash: `{study_hash[:12]}`")
-        st.sidebar.caption(f"📊 weeks={solver_cfg.weeks} staff={custom_staffing}")
-        if all_studies:
-            for s in all_studies:
-                match = "✅" if s.study_hash == study_hash else "❌"
-                st.sidebar.caption(f"{match} `{s.study_hash[:12]}` ({s.total_trials})")
+    # Study/Optimization section moved to bottom
 
-        
-        if manager.study_exists(study_hash):
-
-            summary = manager.get_study_summary(study_hash)
-            if summary and summary.total_trials > 0:
-                st.sidebar.info(f"📚 Étude existante: {summary.total_trials} essais | Score: {summary.best_score:.1f}")
-                
-                col1, col2 = st.sidebar.columns(2)
-                with col1:
-                    if st.button("▶️ + essais", key="sidebar_run_more", use_container_width=True):
-                        st.session_state.trigger_optimize = True
-                with col2:
-                    if st.button("📥 Charger", key="sidebar_load_best", use_container_width=True):
-                        from app.components.study_browser import load_study_result
-                        load_study_result(study_hash, people, solver_cfg)
-                        st.rerun()
-            else:
-                if st.sidebar.button("🚀 Lancer Optimisation", type="primary", use_container_width=True, key="sidebar_optimize"):
-                    st.session_state.trigger_optimize = True
-        else:
-            if st.sidebar.button("🚀 Lancer Optimisation", type="primary", use_container_width=True, key="sidebar_optimize_new"):
-                st.session_state.trigger_optimize = True
-    
-    st.sidebar.divider()
     
     # ============ SECTION 3: CONFIG ============
     st.sidebar.header("⚙️ Configuration")
@@ -164,23 +122,26 @@ def render_sidebar():
     )
     st.session_state.merge_calendars = merge_calendars
 
-    # Basic Settings
-    st.sidebar.number_input(
-        "Semaines", min_value=1, max_value=24, key="config_weeks",
-        help="Nombre de semaines à planifier (horizon de planification)"
-    )
-    st.sidebar.number_input(
-        "Essais (multi-seed)", min_value=1, max_value=50, key="config_tries",
-        help="Nombre de tentatives avec différents seeds - plus d'essais = meilleur résultat potentiel"
-    )
-    st.sidebar.number_input(
-        "Seed (0=auto)", min_value=0, key="config_seed",
-        help="Graine aléatoire pour reproductibilité. 0 = automatique basé sur l'heure"
-    )
-    st.sidebar.number_input(
-        "Temps limite (sec)", min_value=10, max_value=600, key="config_time_limit",
-        help="Temps maximum accordé au solveur pour trouver une solution optimale"
-    )
+    # Basic Settings - COMPACT 2x2 GRID
+    c1, c2 = st.sidebar.columns(2)
+    with c1:
+        st.number_input(
+            "Semaines", min_value=1, max_value=24, key="config_weeks",
+            help="Horizon"
+        )
+        st.number_input(
+            "Seed (0=auto)", min_value=0, key="config_seed",
+            help="Graine"
+        )
+    with c2:
+        st.number_input(
+            "Essais", min_value=1, max_value=50, key="config_tries",
+            help="Tentatives"
+        )
+        st.number_input(
+            "Tps limite (s)", min_value=10, max_value=600, key="config_time_limit",
+            help="Temps max"
+        )
 
     # Advanced panel (Week)
     with st.sidebar.expander("🔧 Paramètres Avancés (Semaine)", expanded=False):
@@ -197,12 +158,15 @@ def render_sidebar():
         st.checkbox("Pas 2 externes ensemble", key="cfg_forbid_contractor_pairs",
             help="Interdire de mettre 2 externes/contractuels en binôme (pour tutorat)")
 
-        st.session_state.setdefault("cfg_max_nights_seq", 3)
-        st.number_input("Nuits consécutives max", min_value=1, max_value=5, key="cfg_max_nights_seq")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.session_state.setdefault("cfg_max_nights_seq", 3)
+            st.number_input("Max Nuits", min_value=1, max_value=5, key="cfg_max_nights_seq", help="Nuits consécutives max")
         
-        st.session_state.setdefault("cfg_max_consecutive_days", 6)
-        st.number_input("Jours consécutifs max", min_value=3, max_value=14, key="cfg_max_consecutive_days",
-            help="Maximum de jours travaillés sans interruption (sauf si week-end travaillé)")
+        with c2:
+            st.session_state.setdefault("cfg_max_consecutive_days", 6)
+            st.number_input("Max Jours", min_value=3, max_value=14, key="cfg_max_consecutive_days",
+                help="Jours consécutifs max")
         
         st.subheader("Effectifs Requis (Par Jour)")
         c1, c2, c3 = st.columns(3)
@@ -217,20 +181,22 @@ def render_sidebar():
             st.number_input("Paires Nuit", min_value=1, max_value=5, key="cfg_req_pairs_N", help="Nb de paires (x2 personnes)")
         
         st.subheader("Poids objectif (soft)")
-        st.caption("Plus le poids est élevé, plus la contrainte est prioritaire")
+        st.caption("Priorités (Haut = Important)")
         
-        st.session_state.setdefault("cfg_weight_night_fairness", 10)
-        st.slider("σ Nuits", min_value=0, max_value=20, key="cfg_weight_night_fairness")
-        
-        st.session_state.setdefault("cfg_weight_eve_fairness", 3)
-        st.slider("σ Soirs", min_value=0, max_value=20, key="cfg_weight_eve_fairness")
-        
-        st.session_state.setdefault("cfg_weight_deviation", 5)
-        st.slider("Écart cible", min_value=0, max_value=20, key="cfg_weight_deviation")
-        
-        st.session_state.setdefault("cfg_weight_clopening", 1)
-        st.slider("Soir→Jour", min_value=0, max_value=10, key="cfg_weight_clopening",
-            help="Pénalité pour enchaînement soir suivi d'un jour")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.session_state.setdefault("cfg_weight_night_fairness", 10)
+            st.slider("σ Nuits", 0, 20, key="cfg_weight_night_fairness")
+            
+            st.session_state.setdefault("cfg_weight_deviation", 5)
+            st.slider("Écart", 0, 20, key="cfg_weight_deviation")
+
+        with c2:
+            st.session_state.setdefault("cfg_weight_eve_fairness", 3)
+            st.slider("σ Soirs", 0, 20, key="cfg_weight_eve_fairness")
+            
+            st.session_state.setdefault("cfg_weight_clopening", 1)
+            st.slider("Soir→Jour", 0, 10, key="cfg_weight_clopening", help="Pénalité repos court")
         
         st.subheader("Équité")
         st.session_state.setdefault("cfg_fairness_mode", ("by-wd", "Par jours/semaine"))
@@ -262,14 +228,55 @@ def render_sidebar():
         )
         
         st.subheader("Poids objectif")
-        st.session_state.setdefault("cfg_weight_w_fairness", 10)
-        st.slider("σ Fairness", min_value=0, max_value=20, key="cfg_weight_w_fairness", help="Équité charge globale")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.session_state.setdefault("cfg_weight_w_fairness", 10)
+            st.slider("σ Fairness", 0, 20, key="cfg_weight_w_fairness", help="Équité charge")
+            
+            st.session_state.setdefault("cfg_weight_w_24h", 5)
+            st.slider("Équité 24h", 0, 20, key="cfg_weight_w_24h", help="Répartir 24h")
+
+        with c2:
+            st.session_state.setdefault("cfg_weight_w_split", 5)
+            st.slider("Pén. Split", 0, 20, key="cfg_weight_w_split", help="Éviter Sam+Dim")
+            
+            st.session_state.setdefault("cfg_weight_w_consecutive", 50)
+            st.slider("3 WE cons.", 0, 500, step=10, key="cfg_weight_w_consecutive", help="Pénalité 3 WE suite")
+
+    st.sidebar.divider()
+
+    # ============ SECTION 2: STUDY & OPTIMIZATION ============
+    st.sidebar.header("🚀 Optimisation")
+    
+    # Check for existing study
+    from app.components.utils import get_solver_config, get_custom_staffing, get_weekend_config
+    solver_cfg = get_solver_config()
+    custom_staffing = get_custom_staffing()
+    weekend_config = get_weekend_config()
+    
+    if people:
+        from rota.solver.study_manager import StudyManager, compute_study_hash
+        manager = StudyManager()
+        study_hash = compute_study_hash(solver_cfg, people, custom_staffing, weekend_config)
         
-        st.session_state.setdefault("cfg_weight_w_split", 5)
-        st.slider("Pénalité Split", min_value=0, max_value=20, key="cfg_weight_w_split", help="Éviter de travailler Samedi ET Dimanche (sauf 24h)")
-        
-        st.session_state.setdefault("cfg_weight_w_24h", 5)
-        st.slider("Équité 24h", min_value=0, max_value=20, key="cfg_weight_w_24h", help="Répartir équitablement les shifts 24h")
-        
-        st.session_state.setdefault("cfg_weight_w_consecutive", 50)
-        st.slider("Pénalité 3 WE consécutifs", min_value=0, max_value=500, step=10, key="cfg_weight_w_consecutive", help="Pénalité forte pour travailler 3 week-ends de suite")
+        if manager.study_exists(study_hash):
+
+            summary = manager.get_study_summary(study_hash)
+            if summary and summary.total_trials > 0:
+                st.sidebar.info(f"📚 Étude existante: {summary.total_trials} essais | Score: {summary.best_score:.1f}")
+                
+                col1, col2 = st.sidebar.columns(2)
+                with col1:
+                    if st.button("▶️ + essais", key="sidebar_run_more", use_container_width=True):
+                        st.session_state.trigger_optimize = True
+                with col2:
+                    if st.button("📥 Charger", key="sidebar_load_best", use_container_width=True):
+                        from app.components.study_browser import load_study_result
+                        load_study_result(study_hash, people, solver_cfg)
+                        st.rerun()
+            else:
+                if st.sidebar.button("🚀 Lancer Optimisation", type="primary", use_container_width=True, key="sidebar_optimize"):
+                    st.session_state.trigger_optimize = True
+        else:
+            if st.sidebar.button("🚀 Lancer Optimisation", type="primary", use_container_width=True, key="sidebar_optimize_new"):
+                st.session_state.trigger_optimize = True
