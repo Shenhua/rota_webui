@@ -45,13 +45,13 @@ def render_study_info(
     # Display study info
     with st.container():
         st.markdown("---")
-        st.markdown("**📊 Previous Run Found**")
+        st.markdown("**📊 Résultat Précédent Trouvé**")
         
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Best Score", f"{summary.best_score:.1f}")
+            st.metric("Meilleur Score", f"{summary.best_score:.1f}")
         with col2:
-            st.metric("Trials", summary.total_trials)
+            st.metric("Essais", summary.total_trials)
         
         st.caption(f"Seed: {summary.best_seed} | {summary.updated_at.strftime('%Y-%m-%d %H:%M')}")
         
@@ -59,14 +59,14 @@ def render_study_info(
         with col_load:
             # Use on_click to update state BEFORE widgets re-render
             st.button(
-                "📥 Load Best", 
+                "📥 Charger", 
                 key="load_best_study",
                 on_click=on_load,
                 args=(study_hash,) if on_load else None
             )
         
         with col_continue:
-            st.caption("Or run optimizer to try more seeds")
+            st.caption("Ou relancer pour plus d'essais")
     
     return (study_hash, summary)
 
@@ -87,25 +87,25 @@ def render_study_browser(
     studies = manager.list_studies(limit=10)
     
     if not studies:
-        st.info("No previous studies found.")
+        st.info("Aucune étude précédente trouvée.")
         return None
     
-    with st.expander("📚 Browse Past Studies", expanded=False):
+    with st.expander("📚 Parcourir les Études", expanded=False):
         for study in studies:
             col1, col2, col3 = st.columns([3, 2, 1])
             
             with col1:
                 st.markdown(f"**{study.study_name}**")
-                st.caption(f"{study.team_size} people, {study.weeks} weeks")
+                st.caption(f"{study.team_size} personnes, {study.weeks} semaines")
             
             with col2:
                 st.metric("Score", f"{study.best_score:.1f}", label_visibility="collapsed")
-                st.caption(f"{study.total_trials} trials")
+                st.caption(f"{study.total_trials} essais")
             
             with col3:
                 # Use on_click to avoid state modification errors
                 st.button(
-                    "Load", 
+                    "Charger", 
                     key=f"load_{study.study_hash}",
                     on_click=on_select,
                     args=(study.study_hash,) if on_select else None
@@ -140,7 +140,7 @@ def load_study_result(study_hash: str, people: Optional[list] = None, config = N
     trial = manager.get_best_trial(study_hash)
     
     if not trial:
-        st.error("Could not load study result.")
+        st.error("Impossible de charger le résultat de l'étude.")
         return False
     
     # Get study summary to load config/team if not provided
@@ -197,13 +197,13 @@ def load_study_result(study_hash: str, people: Optional[list] = None, config = N
         config = get_solver_config()
     
     if not people:
-        st.warning("Cannot load validation data - team not found in session.")
+        st.warning("Données de validation manquantes - équipe introuvable.")
         # Still load schedule
         st.session_state.schedule = schedule
         st.session_state.best_seed = trial.seed
         st.session_state.best_score = trial.score
         st.session_state.study_hash = study_hash
-        st.success(f"✅ Loaded schedule (score: {trial.score:.1f}, seed: {trial.seed})")
+        st.success(f"✅ Planning chargé (score: {trial.score:.1f}, seed: {trial.seed})")
         return True
     
     # Compute matching edo_plan and staffing
@@ -227,5 +227,5 @@ def load_study_result(study_hash: str, people: Optional[list] = None, config = N
     st.session_state.study_hash = study_hash
     st.session_state.loaded_from_cache = True
     
-    st.success(f"✅ Loaded best result (score: {trial.score:.1f}, seed: {trial.seed})")
+    st.success(f"✅ Meilleur résultat chargé (score: {trial.score:.1f}, seed: {trial.seed})")
     return True

@@ -22,7 +22,7 @@ def render_dashboard(state: SessionStateManager):
     _render_kpis(state)
 
     # === TABS ===
-    t1, t2, t3, t4, t5 = st.tabs(["📊 Matrice", "📅 Calendrier", "📈 Analytics", "👥 ParPoste", "📋 Synthèse"])
+    t1, t2, t3, t4, t5 = st.tabs(["📊 Matrice", "📅 Calendrier", "📈 Analytiques", "👥 Par Poste", "📋 Synthèse"])
     
     with t1:
         _render_matrix(state)
@@ -46,7 +46,7 @@ def _render_kpis(state):
     with col2:
         st.metric("Violations", validation.rolling_48h_violations + validation.nuit_suivie_travail)
     with col3:
-        st.metric("Gaps", validation.slots_vides)
+        st.metric("Manques", validation.slots_vides)
     with col4:
         st.metric("Temps", f"{schedule.solve_time_seconds:.1f}s")
         
@@ -68,7 +68,7 @@ def _render_kpis(state):
             st.error(f"❌ **{result.message}**")
             st.markdown("Le nombre d'agents est insuffisant pour couvrir la demande.")
             
-            with st.expander("🚨 Détail des Besoins Externes (Contractors)", expanded=True):
+            with st.expander("🚨 Détail des Créneaux Non Pourvus", expanded=True):
                 if result.details:
                     df_missing = pd.DataFrame(result.details)
                     total_people = df_missing["Besoins"].sum()
@@ -297,7 +297,7 @@ def _render_coverage(state):
                 st.write(f"... et {len(gaps) - 20} autres")
 
 def _render_charts(state):
-    st.subheader("📈 Analytics")
+    st.subheader("📈 Analytiques")
     schedule = state.schedule
     weeks = state.config_weeks
     

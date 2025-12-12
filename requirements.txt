@@ -3,3 +3,6 @@ pandas>=2.2
 numpy>=1.26
 pyyaml>=6.0
 openpyxl>=3.1
+ortools>=9.8
+plotly>=5.18
+fpdf2>=2.7
