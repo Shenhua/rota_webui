@@ -18,7 +18,7 @@ from app.views.dashboard import render_dashboard
 from app.views.export import render_downloads
 
 # Solver logic (still needed for the "run optimization" trigger)
-from app.components.utils import get_solver_config, get_solver_config_dict, get_weekend_config
+from app.components.utils import get_solver_config, get_weekend_config
 from rota.solver.optimizer import optimize_with_cache
 from rota.solver.edo import build_edo_plan
 from rota.solver.staffing import derive_staffing
@@ -57,35 +57,55 @@ def main():
 def _handle_optimization(state: SessionStateManager):
     """Run optimization if triggered."""
     if st.session_state.get("trigger_optimize"):
-        st.session_state.trigger_optimize = False  # Reset
-        
-        with st.spinner("Optimisation Semaine en cours..."):
-            solver_cfg = get_solver_config()
-            
-            # Using custom staffing if not stress test (placeholder for now)
-            schedule, best_seed, best_score, study_hash = optimize_with_cache(
-                state.people, 
-                solver_cfg, 
-                tries=state.config_tries, 
-                seed=state.config_seed if state.config_seed > 0 else None,
-                cohort_mode=solver_cfg.fairness_mode.value,
-                # use_cache=True # Default
-            )
-            
-            if schedule.status in ["optimal", "feasible"]:
-                # Post-process artifacts
-                edo_plan = build_edo_plan(state.people, state.config_weeks)
-                state.edo_plan = edo_plan
+        solver_cfg = get_solver_config()
+        custom_staffing = None # Placeholder for now
+        weekend_config = None # Placeholder for now
+
+        if state.trigger_optimize:
+            with st.spinner("🚀 Optimisation en cours..."):
+                # Run/Resume optimization
+                schedule, seed, score, study_hash = optimize_with_cache(
+                    people=state.people,
+                    config=solver_cfg,
+                    tries=state.config_tries,
+                    seed=None if state.config_seed == 0 else state.config_seed,
+                    cohort_mode=state.fairness.fairness_mode if state.fairness else "by-wd",
+                    custom_staffing=custom_staffing,
+                    weekend_config=weekend_config,
+                )
                 
-                state.staffing = derive_staffing(state.people, state.config_weeks, edo_plan.plan)
-                state.validation = validate_schedule(schedule, state.people, edo_plan, state.staffing)
-                state.fairness = calculate_fairness(schedule, state.people, solver_cfg.fairness_mode.value)
-                
+                # Update state with result
                 state.schedule = schedule
-                state.best_seed = best_seed
-                state.best_score = best_score
+                state.best_seed = seed
+                state.best_score = score
                 state.study_hash = study_hash
-                st.success(f"Solution trouvée! Score: {best_score:.0f}")
+                state.trigger_optimize = False  # Reset trigger
+
+                # Result processing
+                if schedule and schedule.status in ["optimal", "feasible"]:
+                    # Post-process artifacts
+                    edo_plan = build_edo_plan(state.people, state.config_weeks)
+                    state.edo_plan = edo_plan
+                    
+                    # Staffing verification
+                    if not state.people:
+                        st.error("❌ Erreur interne: Liste du personnel vide ou non initialisée.")
+                        return
+
+                    staffing = derive_staffing(state.people, state.config_weeks, edo_plan.plan, custom_staffing=custom_staffing)
+                    state.staffing = staffing
+                    
+                    # Validation & Fairness
+                    validation = validate_schedule(schedule, state.people, edo_plan, staffing)
+                    state.validation = validation
+                    
+                    fairness_mode = solver_cfg.fairness_mode.value if hasattr(solver_cfg.fairness_mode, 'value') else "by-wd"
+                    fairness = calculate_fairness(schedule, state.people, fairness_mode)
+                    state.fairness = fairness
+                    
+                    st.success(f"✅ Solution trouvée! Score: {score:.1f}")
+                else:
+                    st.error("❌ Aucune solution réalisable trouvée.")
 
 def _handle_weekend_optimization(state: SessionStateManager):
     """Run weekend solver if needed."""

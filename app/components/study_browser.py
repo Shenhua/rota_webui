@@ -57,10 +57,13 @@ def render_study_info(
         
         col_load, col_continue = st.columns(2)
         with col_load:
-            if st.button("📥 Load Best", key="load_best_study"):
-                if on_load:
-                    on_load(study_hash)
-                return (study_hash, summary)
+            # Use on_click to update state BEFORE widgets re-render
+            st.button(
+                "📥 Load Best", 
+                key="load_best_study",
+                on_click=on_load,
+                args=(study_hash,) if on_load else None
+            )
         
         with col_continue:
             st.caption("Or run optimizer to try more seeds")
@@ -100,17 +103,20 @@ def render_study_browser(
                 st.caption(f"{study.total_trials} trials")
             
             with col3:
-                if st.button("Load", key=f"load_{study.study_hash}"):
-                    if on_select:
-                        on_select(study.study_hash)
-                    return study
+                # Use on_click to avoid state modification errors
+                st.button(
+                    "Load", 
+                    key=f"load_{study.study_hash}",
+                    on_click=on_select,
+                    args=(study.study_hash,) if on_select else None
+                )
             
             st.divider()
     
     return None
 
 
-def load_study_result(study_hash: str, people: list = None, config = None):
+def load_study_result(study_hash: str, people: Optional[list] = None, config = None):
     """
     Load best result from a study into session state.
     

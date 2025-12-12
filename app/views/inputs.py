@@ -8,6 +8,8 @@ from typing import List, Optional
 import pandas as pd
 
 from app.components.sidebar import render_logo, render_file_upload, render_team_editor, render_solver_config
+from app.components.study_browser import render_study_info, render_study_browser, load_study_result
+from app.components.utils import get_solver_config
 from app.state.session import SessionStateManager
 from rota.models.person import Person
 
@@ -32,9 +34,17 @@ def render_inputs(state: SessionStateManager):
         
         st.divider()
         
+        # Study Browser (Global)
+        render_study_browser(lambda hash: load_study_result(hash, state.people))
+
         st.header("2. Configuration")
         render_solver_config()
         
+        # Check if current config matches an existing study
+        if state.people:
+            cfg = get_solver_config()
+            render_study_info(cfg, state.people, lambda hash: load_study_result(hash, state.people, cfg))
+
         # Trigger button
         if st.button("🚀 Lancer l'optimisation", type="primary", use_container_width=True):
             st.session_state.trigger_optimize = True

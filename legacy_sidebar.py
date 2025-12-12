@@ -1,32 +1,21 @@
-"""
-Sidebar Components
-==================
-Reusable widgets for the sidebar.
-"""
 import streamlit as st
 import pandas as pd
-from typing import Optional, List, Any
-from rota.models.person import Person
+
 from rota.models.rules import RULES
+from rota.models.person import Person
 from rota.io.csv_loader import load_team
 
-def render_logo():
-    """Render the app logo/header."""
-    # st.sidebar.image("assets/logo.png", width=150) # Placeholder
-    st.sidebar.markdown("### 🧬 Rota Optimizer")
 
-def render_file_upload() -> Optional[Any]:
-    """Render file uploader."""
-    return st.sidebar.file_uploader("Charger CSV", type=["csv"], key="team_csv_uploader")
-
-def render_team_editor(uploaded_file: Optional[Any] = None) -> List[Person]:
-    """
-    Render the team editor table. 
-    Handles loading from file or session state.
-    """
-    people: List[Person] = []
+def render_sidebar():
+    """Render the configuration sidebar."""
     
-    # 1. Handle File Upload or Session Load
+    # ============ SECTION 1: TEAM SETUP ============
+    st.sidebar.header("📂 Équipe")
+    
+    uploaded_file = st.sidebar.file_uploader("Charger CSV", type=["csv"], key="team_csv_uploader")
+    
+    # Load team
+    # Load team
     if uploaded_file:
         try:
             df = pd.read_csv(uploaded_file)
@@ -37,22 +26,22 @@ def render_team_editor(uploaded_file: Optional[Any] = None) -> List[Person]:
             st.sidebar.error(f"Erreur: {e}")
             people = []
     else:
-        # Check session state
+        # Check session state but DO NOT auto-populate demo data
         if "people" in st.session_state and st.session_state.people:
              people = st.session_state.people
         else:
              people = []
              st.sidebar.info("ℹ️ Veuillez charger un fichier CSV")
 
-    if not people:
-        return []
+    # Show team editor in expander (only if people exist)
 
-    # 2. Render Editor
-    with st.sidebar.expander(f"👥 Équipe ({len(people)})", expanded=False):
-        # Build editable dataframe
-        team_data = []
-        for p in people:
-            team_data.append({
+
+    
+    # Show team editor in expander
+    if people:
+        with st.sidebar.expander(f"👥 Équipe ({len(people)})", expanded=False):
+            # Build editable dataframe
+            team_df = pd.DataFrame([{
                 "Nom": p.name,
                 "J/sem": p.workdays_per_week,
                 "EDO": p.edo_eligible,
@@ -64,40 +53,37 @@ def render_team_editor(uploaded_file: Optional[Any] = None) -> List[Person]:
                 "Max WE/mois": p.max_weekends_per_month,
                 "Externe": p.is_contractor,
                 "Équipe": p.team or "",
-            })
-        
-        team_df = pd.DataFrame(team_data)
-        
-        # Column config
-        column_config = {
-            "Nom": st.column_config.TextColumn("Nom", width="medium"),
-            "J/sem": st.column_config.NumberColumn("J/sem", min_value=1, max_value=7, step=1, width="small"),
-            "EDO": st.column_config.CheckboxColumn("EDO", width="small"),
-            "EDO jour": st.column_config.SelectboxColumn("EDO jour", options=["", "Lun", "Mar", "Mer", "Jeu", "Ven"], width="small"),
-            "Préf. Nuit": st.column_config.CheckboxColumn("Nuit", width="small"),
-            "Pas Soir": st.column_config.CheckboxColumn("¬Soir", width="small"),
-            "Max Nuits": st.column_config.NumberColumn("Max N", min_value=0, max_value=50, width="small"),
-            "WE dispo": st.column_config.CheckboxColumn("WE", width="small"),
-            "Max WE/mois": st.column_config.NumberColumn("WE/m", min_value=0, max_value=4, step=1, width="small"),
-            "Externe": st.column_config.CheckboxColumn("Ext", width="small", help="Externe/Contractuel"),
-            "Équipe": st.column_config.TextColumn("Team", width="small"),
-        }
-        
-        edited_df = st.data_editor(
-            team_df,
-            use_container_width=True,
-            hide_index=True,
-            num_rows="dynamic",
-            column_config=column_config,
-            key="team_editor_widget", # Unique key
-        )
-        
-        # 3. Sync back to objects
-        if edited_df is not None:
-            updated_people = []
-            for _, row in edited_df.iterrows():
-                if pd.notna(row["Nom"]) and str(row["Nom"]).strip():
-                    try:
+            } for p in people])
+            
+            # Column config for better UX
+            column_config = {
+                "Nom": st.column_config.TextColumn("Nom", width="medium"),
+                "J/sem": st.column_config.NumberColumn("J/sem", min_value=1, max_value=7, step=1, width="small"),
+                "EDO": st.column_config.CheckboxColumn("EDO", width="small"),
+                "EDO jour": st.column_config.SelectboxColumn("EDO jour", options=["", "Lun", "Mar", "Mer", "Jeu", "Ven"], width="small"),
+                "Préf. Nuit": st.column_config.CheckboxColumn("Nuit", width="small"),
+                "Pas Soir": st.column_config.CheckboxColumn("¬Soir", width="small"),
+                "Max Nuits": st.column_config.NumberColumn("Max N", min_value=0, max_value=50, width="small"),
+                "WE dispo": st.column_config.CheckboxColumn("WE", width="small"),
+                "Max WE/mois": st.column_config.NumberColumn("WE/m", min_value=0, max_value=4, step=1, width="small"),
+                "Externe": st.column_config.CheckboxColumn("Ext", width="small", help="Externe/Contractuel"),
+                "Équipe": st.column_config.TextColumn("Team", width="small"),
+            }
+            
+            edited_df = st.data_editor(
+                team_df,
+                use_container_width=True,
+                hide_index=True,
+                num_rows="dynamic",  # Allow adding/removing rows
+                column_config=column_config,
+                key="team_editor",
+            )
+            
+            # Sync edits back to session_state.people
+            if edited_df is not None:
+                updated_people = []
+                for _, row in edited_df.iterrows():
+                    if pd.notna(row["Nom"]) and str(row["Nom"]).strip():
                         updated_people.append(Person(
                             name=str(row["Nom"]).strip(),
                             workdays_per_week=int(row["J/sem"]) if pd.notna(row["J/sem"]) else 4,
@@ -111,18 +97,24 @@ def render_team_editor(uploaded_file: Optional[Any] = None) -> List[Person]:
                             is_contractor=bool(row["Externe"]) if pd.notna(row["Externe"]) else False,
                             team=str(row["Équipe"]) if pd.notna(row["Équipe"]) else "",
                         ))
-                    except (ValueError, TypeError):
-                        continue # Skip invalid rows
-            
-            # Compare and update state
-            if updated_people:
-                return updated_people
+                # Only update if team actually changed
+                # Compare full list of objects (dataclass equality checks all fields)
+                if updated_people:
+                    current_people = st.session_state.get("people", [])
+                    if updated_people != current_people:
+                        st.session_state.people = updated_people
+                        people = updated_people  # Update local reference
+                        # No st.rerun() needed - downstream code uses updated 'people' variable
 
-    return people
-
-def render_solver_config():
-    """Render solver configuration inputs."""
     
+    st.sidebar.divider()
+    
+    # Study/Optimization section moved to bottom
+
+    
+    # ============ SECTION 3: CONFIG ============
+    st.sidebar.header("⚙️ Configuration")
+
     # Global options
     merge_calendars = st.sidebar.checkbox(
         "📅 Mode Fusionné (Semaine + WE)", value=st.session_state.get("merge_calendars", False),
@@ -234,3 +226,57 @@ def render_solver_config():
             "Pas 2 nuits consécutives", key="cfg_forbid_consecutive_nights_we",
             help="Interdire d'enchaîner Vendredi+Samedi ou Samedi+Dimanche Nuit"
         )
+        
+        st.subheader("Poids objectif")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.session_state.setdefault("cfg_weight_w_fairness", 10)
+            st.slider("σ Fairness", 0, 20, key="cfg_weight_w_fairness", help="Équité charge")
+            
+            st.session_state.setdefault("cfg_weight_w_24h", 5)
+            st.slider("Équité 24h", 0, 20, key="cfg_weight_w_24h", help="Répartir 24h")
+
+        with c2:
+            st.session_state.setdefault("cfg_weight_w_split", 5)
+            st.slider("Pén. Split", 0, 20, key="cfg_weight_w_split", help="Éviter Sam+Dim")
+            
+            st.session_state.setdefault("cfg_weight_w_consecutive", 50)
+            st.slider("3 WE cons.", 0, 500, step=10, key="cfg_weight_w_consecutive", help="Pénalité 3 WE suite")
+
+    st.sidebar.divider()
+
+    # ============ SECTION 2: STUDY & OPTIMIZATION ============
+    st.sidebar.header("🚀 Optimisation")
+    
+    # Check for existing study
+    from app.components.utils import get_solver_config, get_custom_staffing, get_weekend_config
+    solver_cfg = get_solver_config()
+    custom_staffing = get_custom_staffing()
+    weekend_config = get_weekend_config()
+    
+    if people:
+        from rota.solver.study_manager import StudyManager, compute_study_hash
+        manager = StudyManager()
+        study_hash = compute_study_hash(solver_cfg, people, custom_staffing, weekend_config)
+        
+        if manager.study_exists(study_hash):
+
+            summary = manager.get_study_summary(study_hash)
+            if summary and summary.total_trials > 0:
+                st.sidebar.info(f"📚 Étude existante: {summary.total_trials} essais | Score: {summary.best_score:.1f}")
+                
+                col1, col2 = st.sidebar.columns(2)
+                with col1:
+                    if st.button("▶️ + essais", key="sidebar_run_more", use_container_width=True):
+                        st.session_state.trigger_optimize = True
+                with col2:
+                    if st.button("📥 Charger", key="sidebar_load_best", use_container_width=True):
+                        from app.components.study_browser import load_study_result
+                        load_study_result(study_hash, people, solver_cfg)
+                        st.rerun()
+            else:
+                if st.sidebar.button("🚀 Lancer Optimisation", type="primary", use_container_width=True, key="sidebar_optimize"):
+                    st.session_state.trigger_optimize = True
+        else:
+            if st.sidebar.button("🚀 Lancer Optimisation", type="primary", use_container_width=True, key="sidebar_optimize_new"):
+                st.session_state.trigger_optimize = True

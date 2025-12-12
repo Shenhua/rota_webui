@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional
 from rota.models.person import Person
 from rota.solver.pairs import PairSchedule
 from rota.solver.edo import EDOPlan
-from rota.solver.validation import ScheduleValidation
+from rota.solver.validation import ValidationResult
 from rota.solver.staffing import WeekStaffing
 
 @dataclass
@@ -26,7 +26,7 @@ class DiagnosisService:
     def diagnose(
         schedule: PairSchedule, 
         people: List[Person], 
-        validation: ScheduleValidation,
+        validation: ValidationResult,
         edo_plan: EDOPlan,
         staffing: Optional[WeekStaffing] = None
     ) -> ScenarioResult:
@@ -80,7 +80,7 @@ class DiagnosisService:
             )
             
     @staticmethod
-    def _diagnose_deficit(validation: ScheduleValidation, staffing: Optional[WeekStaffing]) -> ScenarioResult:
+    def _diagnose_deficit(validation: ValidationResult, staffing: Optional[WeekStaffing]) -> ScenarioResult:
         """Analyze missing slots."""
         missing_data = []
         

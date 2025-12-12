@@ -87,6 +87,94 @@ def _render_kpis(state):
     else:
         st.warning("⚠️ Impossible de calculer le diagnostic (données EDO/Staffing manquantes).")
 
+    # === Secondary Metrics (Detailed) ===
+    with st.expander("📈 Détails des métriques", expanded=False):
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1:
+            st.metric("Violations 48h", validation.rolling_48h_violations,
+                    delta="CRITIQUE" if validation.rolling_48h_violations > 0 else None,
+                    delta_color="inverse")
+        with col2:
+            st.metric("Nuit→Travail", validation.nuit_suivie_travail, 
+                    delta="violations" if validation.nuit_suivie_travail > 0 else None,
+                    delta_color="inverse")
+        with col3:
+            st.metric("Soir→Jour", validation.soir_vers_jour)
+        with col4:
+            st.metric("σ Nuits", f"{state.fairness.night_std:.2f}" if state.fairness else "N/A")
+        with col5:
+            st.metric("σ Soirs", f"{state.fairness.eve_std:.2f}" if state.fairness else "N/A")
+        
+        st.caption(f"🌱 Seed gagnant: {state.best_seed}")
+
+    # === Capacity Analysis ===
+    if staffing and edo_plan:
+        with st.expander("📊 Analyse de Capacité", expanded=False):
+            from rota.solver.capacity import calculate_capacity
+            
+            cap_analysis = calculate_capacity(schedule, state.people, staffing, edo_plan)
+            
+            # Summary row
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Capacité dispo.", f"{cap_analysis.net_capacity} jrs", 
+                            delta=f"-{cap_analysis.total_edo_days} EDO")
+            with col2:
+                st.metric("Besoins totaux", f"{cap_analysis.total_required_person_shifts} shifts")
+            with col3:
+                st.metric("Affectés", f"{cap_analysis.total_assigned_person_shifts} shifts")
+            with col4:
+                balance_icon = "✅" if cap_analysis.capacity_balance >= 0 else "⚠️"
+                st.metric(f"{balance_icon} Balance", f"{cap_analysis.capacity_balance:+d}")
+            
+            st.divider()
+            
+            # Per-shift breakdown
+            st.markdown("**Par type de quart:**")
+            shift_data = []
+            for shift, data in cap_analysis.by_shift.items():
+                shift_name = {"D": "Jour 🌅", "S": "Soir 🌆", "N": "Nuit 🌙"}.get(shift, shift)
+                gap = data["gap"]
+                shift_data.append({
+                    "Quart": shift_name,
+                    "Requis": data["required"],
+                    "Affectés": data["assigned"],
+                    "Écart": gap,
+                    "Status": "✅" if gap <= 0 else f"❌ -{gap}"
+                })
+            st.dataframe(pd.DataFrame(shift_data), use_container_width=True, hide_index=True)
+            
+            # Recommendation
+            st.divider()
+            st.markdown("**💡 Recommandation:**")
+            if cap_analysis.agents_needed > 0.5:
+                st.error(f"⚠️ **Besoin d'environ {cap_analysis.agents_needed:.1f} agents supplémentaires** pour couvrir tous les créneaux.")
+            elif cap_analysis.excess_agent_days > 10:
+                st.success(f"✅ **Équipe bien dimensionnée**. {cap_analysis.excess_agent_days:.0f} jours-agent disponibles en marge.")
+            else:
+                st.info(f"ℹ️ L'équipe est à **{cap_analysis.utilization_percent:.0f}%** de sa capacité. Marge confortable.")
+            
+            # Violation breakdown by type (re-added here as per legacy)
+            if validation.violations:
+                st.divider()
+                st.write("**Détail des violations:**")
+                viol_types = {}
+                for v in validation.violations:
+                    viol_types[v.type] = viol_types.get(v.type, 0) + 1
+                
+                cols = st.columns(len(viol_types))
+                for i, (vtype, count) in enumerate(viol_types.items()):
+                    type_labels = {
+                        "unfilled_slot": "🔴 Slots vides",
+                        "night_followed_work": "🟠 Nuit→Travail",
+                        "clopening": "🟡 Soir→Jour",
+                        "48h_exceeded": "🔴 48h dépassé",
+                        "duplicate": "⚠️ Doublon"
+                    }
+                    label = type_labels.get(vtype, vtype)
+                    with cols[i]:
+                        st.metric(label, count)
+
 def _render_matrix(state):
     st.subheader("Matrice des affectations")
     st.caption("🔵 Jour | 🟠 Soir | 🟣 Nuit | ⬜ Admin | ⚪ OFF")
