@@ -160,7 +160,7 @@ def render_sidebar():
 
         c1, c2 = st.columns(2)
         with c1:
-            st.session_state.setdefault("cfg_max_nights_seq", 3)
+            st.session_state.setdefault("cfg_max_nights_seq", 1)
             st.number_input("Max Nuits", min_value=1, max_value=5, key="cfg_max_nights_seq", help="Nuits consécutives max")
         
         with c2:
