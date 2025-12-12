@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List
 
+from .rules import RULES
+
 
 class FairnessMode(str, Enum):
     """Fairness distribution modes."""
@@ -31,9 +33,9 @@ class CoverageTarget:
 @dataclass
 class SolverConfig:
     """Configuration for the scheduling solver."""
-    
+
     # Horizon
-    weeks: int = 4
+    weeks: int = RULES.default_weeks
     
     # Solver behavior
     time_limit_seconds: int = 60
@@ -52,9 +54,9 @@ class SolverConfig:
     
     # Hard constraints
     forbid_night_to_day: bool = True  # No work day after night
-    max_consecutive_days: int = 6  # Max consecutive working days (global)
+    max_consecutive_days: int = RULES.default_max_consecutive_days  # Max consecutive working days (global)
     min_rest_after_night: int = 1  # Days of rest after night
-    max_nights_sequence: int = 3  # Max consecutive nights
+    max_nights_sequence: int = RULES.default_max_nights_sequence  # Max consecutive nights
     max_evenings_sequence: int = 3  # Max consecutive evenings
     max_days_per_week: int = 5  # Max work days per week
     

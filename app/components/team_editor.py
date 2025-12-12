@@ -32,7 +32,8 @@ def render_team_editor(
     else:
         df = pd.DataFrame(columns=[
             "name", "workdays_per_week", "weeks_pattern", "prefers_night",
-            "no_evening", "max_nights", "edo_eligible", "edo_fixed_day", "team"
+            "no_evening", "max_nights", "edo_eligible", "edo_fixed_day", "team",
+            "available_weekends", "max_weekends_per_month"
         ])
     
     # Column configuration for better editing
@@ -54,6 +55,10 @@ def render_team_editor(
             "EDO Day", options=["", "Lun", "Mar", "Mer", "Jeu", "Ven"]
         ),
         "team": st.column_config.TextColumn("Team"),
+        "available_weekends": st.column_config.CheckboxColumn("Avail. Weekends", default=True),
+        "max_weekends_per_month": st.column_config.NumberColumn(
+            "Max WE/Month", min_value=0, max_value=5, default=2
+        ),
     }
     
     # Editable data editor
@@ -83,6 +88,8 @@ def render_team_editor(
             edo_eligible=bool(row.get("edo_eligible", False)),
             edo_fixed_day=str(row.get("edo_fixed_day", "")).strip() or None,
             team=str(row.get("team", "")).strip(),
+            available_weekends=bool(row.get("available_weekends", True)),
+            max_weekends_per_month=int(row.get("max_weekends_per_month", 2) or 2),
             id=idx,
         )
         updated_team.append(person)
@@ -118,7 +125,7 @@ def render_team_editor(
         if on_change:
             on_change(updated_team)
     else:
-        for i, (old, new) in enumerate(zip(team, updated_team)):
+        for old, new in zip(team, updated_team, strict=False):
             if old.name != new.name or old.workdays_per_week != new.workdays_per_week:
                 if on_change:
                     on_change(updated_team)

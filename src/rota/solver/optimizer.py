@@ -98,7 +98,7 @@ def optimize(
         workers_per_solve_calc = max(1, total_cores // num_concurrent_solvers)
         config.workers_per_solve = workers_per_solve_calc
         
-        slog.step(f"Parallel Execution: {num_concurrent_solvers} solers x {workers_per_solve_calc} threads (Total Cores: {total_cores})")
+        slog.step(f"Parallel Execution: {num_concurrent_solvers} solvers x {workers_per_solve_calc} threads (Total Cores: {total_cores})")
         
         best_schedule = None
         best_score = float("inf")
@@ -195,3 +195,124 @@ def solve_with_validation(
     schedule.score = score
     
     return schedule, score
+
+
+def optimize_with_cache(
+    people: List[Person],
+    config: SolverConfig,
+    tries: int = 1,
+    seed: Optional[int] = None,
+    cohort_mode: str = "by-wd",
+    custom_staffing: Optional[Dict[str, int]] = None,
+    use_cache: bool = True,
+) -> Tuple[PairSchedule, int, float, str]:
+    """
+    Run optimization with study caching.
+    
+    If a matching study exists:
+        - Skips already-tried seeds
+        - Compares new results with cached best
+        - Returns the overall best (cached or new)
+    
+    Args:
+        people: List of Person objects
+        config: Solver configuration
+        tries: Number of attempts
+        seed: Base seed
+        cohort_mode: For fairness calculation
+        custom_staffing: Optional staffing override
+        use_cache: Whether to use study caching (default True)
+        
+    Returns:
+        (best_schedule, best_seed, best_score, study_hash)
+    """
+    from rota.solver.study_manager import StudyManager, compute_study_hash
+    
+    manager = StudyManager()
+    study_hash = compute_study_hash(config, people)
+    
+    # Check if study exists
+    if not manager.study_exists(study_hash):
+        manager.create_study(study_hash, config, people)
+    
+    # Get previously tried seeds to avoid duplicates
+    tried_seeds = set(manager.get_tried_seeds(study_hash)) if use_cache else set()
+    
+    # Generate new seeds, skipping already-tried ones
+    base_seed = seed if seed is not None else int(time.time())
+    seeds_to_try = []
+    candidate_seed = base_seed
+    while len(seeds_to_try) < tries:
+        if candidate_seed not in tried_seeds:
+            seeds_to_try.append(candidate_seed)
+        candidate_seed += 1
+    
+    if not seeds_to_try:
+        logger.info(f"All {tries} seeds already tried for study {study_hash}")
+        # Return cached best
+        best_trial = manager.get_best_trial(study_hash)
+        if best_trial:
+            logger.info(f"Returning cached best: seed={best_trial.seed}, score={best_trial.score:.2f}")
+            schedule = manager.load_schedule_from_trial(best_trial)
+            return schedule, best_trial.seed, best_trial.score, study_hash
+    
+    # Run optimization with the new seeds
+    edo_plan = build_edo_plan(people, config.weeks)
+    staffing = derive_staffing(people, config.weeks, edo_plan.plan, custom_staffing=custom_staffing)
+    
+    slog.phase(f"Cached Optimization ({len(seeds_to_try)} new tries, study={study_hash[:8]})")
+    
+    best_schedule = None
+    best_score = float("inf")
+    best_seed = base_seed
+    
+    # Simple sequential for now (could parallelize)
+    for cur_seed in seeds_to_try:
+        random.seed(cur_seed)
+        schedule = solve_pairs(people, config, staffing, edo_plan)
+        
+        score = float("inf")
+        validation_dict = {}
+        fairness_dict = {}
+        
+        if schedule.status in ["optimal", "feasible"]:
+            validation = validate_schedule(schedule, people, edo_plan, staffing)
+            fairness = calculate_fairness(schedule, people, cohort_mode)
+            score = score_solution(
+                validation, fairness,
+                w_night=config.night_fairness_weight,
+                w_eve=config.evening_fairness_weight,
+            )
+            validation_dict = validation.as_dict()
+            fairness_dict = {
+                "night_std": fairness.night_std,
+                "eve_std": fairness.eve_std,
+                "night_std_by_cohort": fairness.night_std_by_cohort,
+                "eve_std_by_cohort": fairness.eve_std_by_cohort,
+            }
+        
+        # Save trial to cache
+        if use_cache:
+            manager.save_trial(study_hash, cur_seed, score, schedule, validation_dict, fairness_dict)
+        
+        slog.step(f"▸ Seed {cur_seed}: score={score:.2f}")
+        
+        if score < best_score:
+            best_score = score
+            best_schedule = schedule
+            best_seed = cur_seed
+    
+    # Compare with cached best
+    cached_best = manager.get_best_trial(study_hash)
+    if cached_best and cached_best.score < best_score:
+        slog.step(f"Cached result better: {cached_best.score:.2f} vs {best_score:.2f}")
+        best_schedule = manager.load_schedule_from_trial(cached_best)
+        best_score = cached_best.score
+        best_seed = cached_best.seed
+    
+    if best_schedule:
+        best_schedule.score = best_score
+        best_schedule.stats["best_seed"] = best_seed
+        best_schedule.stats["study_hash"] = study_hash
+    
+    return best_schedule, best_seed, best_score, study_hash

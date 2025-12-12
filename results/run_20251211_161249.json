@@ -1,0 +1,589 @@
+{
+  "meta": {
+    "timestamp": "2025-12-11T16:12:49.946355",
+    "run_name": "run_20251211_161249"
+  },
+  "config": {
+    "weeks": 12,
+    "time_limit_seconds": 60,
+    "tries": 5,
+    "seed": 1765465967,
+    "forbid_night_to_day": true,
+    "edo_enabled": true,
+    "max_nights_sequence": 1,
+    "fairness_mode": "by-wd"
+  },
+  "weights": {
+    "night_fairness": 10,
+    "eve_fairness": 3,
+    "deviation": 5.0,
+    "clopening": 1.0
+  },
+  "team": {
+    "count": 16,
+    "by_workdays": {
+      "1j": 16
+    }
+  },
+  "solver": {
+    "status": "optimal",
+    "solve_time_seconds": 0.3078761100769043,
+    "internal_score": 4540.0,
+    "stats": {
+      "solve_time": 0.3078761100769043,
+      "best_seed": 1765465967,
+      "tries": 5
+    }
+  },
+  "validation": {
+    "Slots_vides": 336,
+    "doublons_jour": 36,
+    "Nuit_suivie_travail": 0,
+    "Soir_vers_Jour": 0,
+    "Ecarts_hebdo_jours": 184,
+    "Ecarts_horizon_personnes": 16
+  },
+  "fairness": {
+    "night_std": 0.0,
+    "eve_std": 0.0,
+    "by_cohort": {
+      "nights": {
+        "1j": 0.0
+      },
+      "evenings": {
+        "1j": 0.0
+      }
+    }
+  },
+  "cohort_summary": {
+    "1j": {
+      "count": 16,
+      "nights": {
+        "min": 0,
+        "max": 0,
+        "std": 0.0
+      },
+      "evenings": {
+        "min": 0,
+        "max": 0,
+        "std": 0.0
+      }
+    }
+  },
+  "person_stats": [
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "4",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 1,
+      "team": null,
+      "shifts": {
+        "J": 0,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 0,
+      "target": 12,
+      "delta": -12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "3",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 0,
+      "team": null,
+      "shifts": {
+        "J": 24,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 24,
+      "target": 12,
+      "delta": 12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "3",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 0,
+      "team": null,
+      "shifts": {
+        "J": 24,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 24,
+      "target": 12,
+      "delta": 12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "3",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 0,
+      "team": null,
+      "shifts": {
+        "J": 24,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 24,
+      "target": 12,
+      "delta": 12,
+      "edo_weeks": 0
+    },
+    {
+      "name": "3",
+      "workdays_per_week": 1,
+      "edo_eligible": false,
+      "edo_fixed_day": null,
+      "prefers_night": false,
+      "no_evening": false,
+      "max_nights": 0,
+      "team": null,
+      "shifts": {
+        "J": 24,
+        "S": 0,
+        "N": 0,
+        "A": 0
+      },
+      "total": 24,
+      "target": 12,
+      "delta": 12,
+      "edo_weeks": 0
+    }
+  ],
+  "assignments": [
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 1,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 1,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 2,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 3,
+      "day": "Lun",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 11,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Mar",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Mer",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Jeu",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 0,
+      "person_a": "3",
+      "person_b": "3"
+    },
+    {
+      "week": 12,
+      "day": "Ven",
+      "shift": "D",
+      "slot": 1,
+      "person_a": "3",
+      "person_b": "3"
+    }
+  ]
+}

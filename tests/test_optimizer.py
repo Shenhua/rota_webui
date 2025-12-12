@@ -1,7 +1,8 @@
 """Tests for multi-seed optimizer."""
 import pytest
-from rota.models.person import Person
+
 from rota.models.constraints import SolverConfig
+from rota.models.person import Person
 from rota.solver.optimizer import optimize, solve_with_validation
 
 

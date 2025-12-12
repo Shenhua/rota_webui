@@ -3,13 +3,15 @@ Integration tests for Weekend and Weekday solvers with realistic team configurat
 Tests multiple scenarios and validates results against expected behavior.
 """
 import sys
+
 sys.path.insert(0, 'src')
 
-from rota.solver.weekend import WeekendSolver, WeekendConfig, validate_weekend_schedule
-from rota.models.person import Person
-from dataclasses import dataclass
-from typing import List, Dict
 import json
+from dataclasses import dataclass
+from typing import Dict, List
+
+from rota.models.person import Person
+from rota.solver.weekend import WeekendConfig, WeekendSolver, validate_weekend_schedule
 
 
 @dataclass
@@ -209,7 +211,7 @@ def main():
     # Export results to JSON
     with open("tests/integration_results.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to tests/integration_results.json")
+    print("\nResults saved to tests/integration_results.json")
     
     return 0 if passed == total else 1
 

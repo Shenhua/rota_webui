@@ -1,13 +1,13 @@
 """Tests for EDO system."""
 import pytest
+
 from rota.models.person import Person
 from rota.solver.edo import (
+    EDOPlan,
     build_edo_plan,
     get_edo_count_per_week,
     is_edo_day,
     mark_edo_in_schedule,
-    EDOPlan,
-    JOURS,
 )
 
 

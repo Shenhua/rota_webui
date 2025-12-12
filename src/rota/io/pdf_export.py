@@ -14,6 +14,7 @@ from fpdf import FPDF
 from rota.models.person import Person
 from rota.solver.edo import JOURS, EDOPlan
 from rota.solver.pairs import PairSchedule
+from rota.solver.stats import calculate_person_stats
 from rota.solver.validation import FairnessMetrics, ValidationResult
 from rota.solver.weekend import WeekendResult
 from rota.utils.logging_setup import get_logger
@@ -99,8 +100,8 @@ def export_schedule_to_pdf(
             ("", ""),  # Spacer
             ("--- Validation ---", ""),
             ("Slots vides", str(validation.slots_vides)),
-            ("Violations Nuit→Travail", str(validation.nuit_suivie_travail)),
-            ("Transitions Soir→Jour", str(validation.soir_vers_jour)),
+            ("Violations Nuit->Travail", str(validation.nuit_suivie_travail)),
+            ("Transitions Soir->Jour", str(validation.soir_vers_jour)),
         ])
     
     if weekend_result and weekend_result.assignments:
@@ -225,29 +226,22 @@ def export_schedule_to_pdf(
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Helvetica", "", 8)
     
+    # Use centralized stats calculation
+    person_stats = calculate_person_stats(schedule, people, edo_plan)
+    
     # Data rows
-    for p in sorted(people, key=lambda x: x.name):
-        if p.workdays_per_week == 0:
+    for ps in sorted(person_stats, key=lambda x: x.name):
+        if ps.workdays_per_week == 0:
             continue
-        
-        name = p.name
-        j = schedule.count_shifts(name, "D")
-        s = schedule.count_shifts(name, "S")
-        n = schedule.count_shifts(name, "N")
-        total = j + s + n
-        
-        edo_weeks = sum(1 for w in range(1, weeks + 1) if name in edo_plan.plan.get(w, set()))
-        cible = p.workdays_per_week * weeks - edo_weeks
-        ecart = total - cible
         
         # Color for écart
         ecart_color = (0, 0, 0)  # Default black
-        if ecart < 0:
+        if ps.delta < 0:
             ecart_color = (220, 0, 0)  # Red
-        elif ecart > 0:
+        elif ps.delta > 0:
             ecart_color = (0, 150, 0)  # Green
         
-        row_data = [name[:20], str(j), str(s), str(n), str(total), str(cible), str(ecart), str(edo_weeks)]
+        row_data = [ps.name[:20], str(ps.jours), str(ps.soirs), str(ps.nuits), str(ps.total), str(ps.target), str(ps.delta), str(ps.edo_weeks)]
         for i, (val, w) in enumerate(zip(row_data, widths)):
             # Only apply ecart color to the Écart column (index 6)
             if i == 6:

@@ -1,8 +1,18 @@
 # rota/solver - OR-Tools CP-SAT scheduling solver
 from .edo import EDOPlan, build_edo_plan
-from .engine import solve
+
+# Engine deleted
 from .pairs import PairAssignment, PairSchedule, solve_pairs
 from .staffing import JOURS, WeekStaffing, derive_staffing
+from .stats import (
+    PersonStats, 
+    calculate_person_stats, 
+    stats_to_dict_list,
+    CoverageStats,
+    calculate_coverage,
+    get_total_gaps,
+    get_coverage_percentage,
+)
 from .validation import (
     FairnessMetrics,
     ValidationResult,
@@ -12,7 +22,7 @@ from .validation import (
 )
 
 __all__ = [
-    "solve",
+    "solve_pairs",
     "solve_pairs",
     "PairSchedule", 
     "PairAssignment",
@@ -26,4 +36,11 @@ __all__ = [
     "score_solution",
     "ValidationResult",
     "FairnessMetrics",
+    "PersonStats",
+    "calculate_person_stats",
+    "stats_to_dict_list",
+    "CoverageStats",
+    "calculate_coverage",
+    "get_total_gaps",
+    "get_coverage_percentage",
 ]

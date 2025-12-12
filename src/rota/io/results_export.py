@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from rota.models.person import Person
 from rota.solver.edo import EDOPlan
 from rota.solver.pairs import PairSchedule
+from rota.solver.stats import calculate_person_stats
 from rota.solver.validation import FairnessMetrics, ValidationResult
 from rota.utils.logging_setup import get_logger
 
@@ -51,34 +52,28 @@ def export_results(
     run_name = run_name or f"run_{timestamp}"
     output_path = RESULTS_DIR / f"{run_name}.json"
     
-    # Build per-person stats
+    # Use centralized stats calculation
+    stats_list = calculate_person_stats(schedule, people, edo_plan)
+    name_to_person = {p.name: p for p in people}
+    
+    # Build per-person stats dict for JSON
     person_stats = []
-    for p in people:
-        name = p.name
-        j = schedule.count_shifts(name, "D")
-        s = schedule.count_shifts(name, "S")  # S = Soir (not E)
-        n = schedule.count_shifts(name, "N")
-        a = schedule.count_shifts(name, "A")
-        total = j + s + n + a
-        
-        weeks = schedule.weeks
-        edo_weeks = sum(1 for w in range(1, weeks + 1) if name in edo_plan.plan.get(w, set()))
-        target = p.workdays_per_week * weeks - edo_weeks
-        
+    for ps in stats_list:
+        p = name_to_person[ps.name]
         person_stats.append({
-            "name": name,
-            "workdays_per_week": p.workdays_per_week,
-            "edo_eligible": p.edo_eligible,
+            "name": ps.name,
+            "workdays_per_week": ps.workdays_per_week,
+            "edo_eligible": ps.edo_eligible,
             "edo_fixed_day": p.edo_fixed_day or None,
             "prefers_night": p.prefers_night,
             "no_evening": p.no_evening,
             "max_nights": p.max_nights,
             "team": p.team or None,
-            "shifts": {"J": j, "S": s, "N": n, "A": a},
-            "total": total,
-            "target": target,
-            "delta": total - target,
-            "edo_weeks": edo_weeks,
+            "shifts": {"J": ps.jours, "S": ps.soirs, "N": ps.nuits, "A": ps.admin},
+            "total": ps.total,
+            "target": ps.target,
+            "delta": ps.delta,
+            "edo_weeks": ps.edo_weeks,
         })
     
     # Build cohort summary

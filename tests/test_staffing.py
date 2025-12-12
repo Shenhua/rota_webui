@@ -1,13 +1,14 @@
 """Tests for staffing derivation."""
 import pytest
+
 from rota.models.person import Person
 from rota.solver.staffing import (
+    JOURS,
+    WeekStaffing,
+    calculate_people_needed,
     derive_staffing,
     get_total_slots,
     get_week_slot_count,
-    calculate_people_needed,
-    WeekStaffing,
-    JOURS,
 )
 
 

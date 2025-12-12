@@ -1,9 +1,8 @@
 """Tests for data models."""
-import pytest
+from rota.models.constraints import FairnessMode, SolverConfig, WeekendMode
 from rota.models.person import Person
-from rota.models.shift import ShiftType, WEEKDAYS, WEEKEND, ALL_DAYS, normalize_day
-from rota.models.schedule import Schedule, Assignment
-from rota.models.constraints import SolverConfig, FairnessMode, WeekendMode
+from rota.models.schedule import Assignment, Schedule
+from rota.models.shift import ALL_DAYS, WEEKDAYS, WEEKEND, ShiftType, normalize_day
 
 
 class TestShiftType:
@@ -180,7 +179,7 @@ class TestSolverConfig:
     def test_default_config(self):
         """Test default configuration values."""
         cfg = SolverConfig()
-        assert cfg.weeks == 4
+        assert cfg.weeks == 12  # Default changed by RULES
         assert cfg.forbid_night_to_day is True
         assert cfg.max_nights_sequence == 3
         assert cfg.fairness_mode == FairnessMode.BY_WORKDAYS

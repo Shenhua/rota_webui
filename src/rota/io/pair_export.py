@@ -13,32 +13,21 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from rota.models.person import Person
-from rota.solver.edo import JOURS, EDOPlan
+from rota.solver.edo import EDOPlan
 from rota.solver.pairs import PairSchedule
+from rota.solver.staffing import JOURS
+from rota.solver.stats import calculate_person_stats
 from rota.solver.validation import FairnessMetrics, ValidationResult
 from rota.solver.weekend import WeekendResult
 from rota.utils.logging_setup import get_logger
 
+# Import shared constants and utils
+from rota.io.pair_export_utils import (
+    CODE, COLORS, THIN, DOUBLE_BLACK, BLACK_THIN, BORDER_THIN,
+    get_shift_color
+)
+
 logger = get_logger("rota.io.pair_export")
-
-# Shift code map
-CODE = {"D": "J", "E": "S", "N": "N", "S": "S"}  # E is legacy alias for S
-
-# Colors (same as legacy)
-COLORS = {
-    "J": "DDEEFF",   # Day - light blue
-    "S": "FFE4CC",   # Evening - light orange
-    "N": "E6CCFF",   # Night - light purple
-    "OFF": "EEEEEE", # Off - light grey
-    "EDO": "D8D8D8", # EDO - darker grey
-    "EDO*": "FFC7CE", # EDO conflict - light red
-}
-
-# Border styles
-THIN = Side(border_style="thin", color="CCCCCC")
-DOUBLE_BLACK = Side(border_style="double", color="000000")
-BLACK_THIN = Side(border_style="thin", color="000000")
-BORDER_THIN = Border(top=THIN, bottom=THIN, left=THIN, right=THIN)
 
 
 def export_pairs_to_csv(
@@ -111,14 +100,8 @@ def export_pairs_to_excel(
     name_to_person = {p.name: p for p in people}
     names = sorted([p.name for p in people])
     
-    # Build who works when
-    works_on = {}  # {(name, week, day): shift_code}
-    for a in schedule.assignments:
-        code = CODE.get(a.shift, a.shift)
-        if a.person_a:
-            works_on[(a.person_a, a.week, a.day)] = code
-        if a.person_b:
-            works_on[(a.person_b, a.week, a.day)] = code
+    # Build who works when using PairSchedule method
+    works_on = schedule.get_person_day_matrix(code_map=CODE)
     
     # Fill in OFF and EDO
     for name in names:
@@ -247,30 +230,19 @@ def export_pairs_to_excel(
     for j, h in enumerate(syn_headers, start=1):
         ws_syn.cell(row=1, column=j, value=h).font = Font(bold=True)
     
-    for i, name in enumerate(names, start=2):
-        person = name_to_person[name]
-        
-        j_count = sum(1 for k, v in works_on.items() if k[0] == name and v == "J")
-        s_count = sum(1 for k, v in works_on.items() if k[0] == name and v == "S")
-        n_count = sum(1 for k, v in works_on.items() if k[0] == name and v == "N")
-        a_count = sum(1 for k, v in works_on.items() if k[0] == name and v == "A")
-        total = j_count + s_count + n_count + a_count
-        
-        edo_count = sum(1 for w in range(1, weeks + 1) if name in edo_plan.plan.get(w, set()))
-        target = sum(
-            person.workdays_per_week - (1 if name in edo_plan.plan.get(w, set()) else 0)
-            for w in range(1, weeks + 1)
-        )
-        
-        ws_syn.cell(row=i, column=1, value=name)
-        ws_syn.cell(row=i, column=2, value=j_count)
-        ws_syn.cell(row=i, column=3, value=s_count)
-        ws_syn.cell(row=i, column=4, value=n_count)
-        ws_syn.cell(row=i, column=5, value=a_count)
-        ws_syn.cell(row=i, column=6, value=total)
-        ws_syn.cell(row=i, column=7, value=target)
-        ws_syn.cell(row=i, column=8, value=total - target)
-        ws_syn.cell(row=i, column=9, value=edo_count)
+    # Use centralized stats calculation
+    person_stats = calculate_person_stats(schedule, people, edo_plan)
+    
+    for i, ps in enumerate(sorted(person_stats, key=lambda x: x.name), start=2):
+        ws_syn.cell(row=i, column=1, value=ps.name)
+        ws_syn.cell(row=i, column=2, value=ps.jours)
+        ws_syn.cell(row=i, column=3, value=ps.soirs)
+        ws_syn.cell(row=i, column=4, value=ps.nuits)
+        ws_syn.cell(row=i, column=5, value=ps.admin)
+        ws_syn.cell(row=i, column=6, value=ps.total)
+        ws_syn.cell(row=i, column=7, value=ps.target)
+        ws_syn.cell(row=i, column=8, value=ps.delta)
+        ws_syn.cell(row=i, column=9, value=ps.edo_weeks)
     
     for j in range(1, len(syn_headers) + 1):
         ws_syn.column_dimensions[get_column_letter(j)].width = 14
@@ -391,6 +363,40 @@ def export_pairs_to_excel(
                 ws_gaps.column_dimensions[get_column_letter(j)].width = 20
             ws_gaps.freeze_panes = "A2"
     
+    # ============================================================
+    # --- REORDER SHEETS: Management tabs first ---
+    # ============================================================
+    sheet_names = [ws.title for ws in wb.worksheets]
+    
+    # Define priority order (management first)
+    priority = ["Tableau de bord", "Matrice", "Synthèse"]
+    technical = ["ParPoste_Statique", "Technique", "Gaps", "Violations"]
+    
+    # Get sheets in priority order
+    ordered = []
+    for name in priority:
+        if name in sheet_names:
+            ordered.append(name)
+    
+    # Add technical sheets at the end
+    for name in technical:
+        if name in sheet_names and name not in ordered:
+            ordered.append(name)
+    
+    # Add any remaining sheets
+    for name in sheet_names:
+        if name not in ordered:
+            ordered.append(name)
+    
+    # Reorder workbook sheets
+    for i, name in enumerate(ordered):
+        sheet = wb[name]
+        wb.move_sheet(sheet, offset=i - wb.worksheets.index(sheet))
+    
+    # Remove default "Sheet" if exists
+    if "Sheet" in wb.sheetnames:
+        del wb["Sheet"]
+    
     # Save
     if isinstance(output, (str, Path)):
         wb.save(output)
@@ -398,6 +404,7 @@ def export_pairs_to_excel(
         wb.save(output)
     
     logger.info(f"Excel export complete: {len(schedule.assignments)} assignments")
+
 
 
 # Helper functions
@@ -982,6 +989,46 @@ def export_merged_calendar(
             ws_viol.append([v.type, v.severity, v.week, v.day, v.shift, v.person, v.message])
         
         ws_viol.column_dimensions["G"].width = 60
+    
+    # ============================================================
+    # --- REORDER SHEETS: Management tabs first ---
+    # ============================================================
+    # Desired order: Tableau de bord, Vue Manager, Synthèse, [Perso tabs], Technique, Week-end, Manques, Violations
+    sheet_names = [ws.title for ws in wb.worksheets]
+    
+    # Define priority order (management first)
+    priority = ["Tableau de bord", "Vue Manager", "Synthèse"]
+    technical = ["Technique", "Week-end", "Manques (Gaps)", "Violations"]
+    
+    # Get sheets in priority order
+    ordered = []
+    for name in priority:
+        if name in sheet_names:
+            ordered.append(name)
+    
+    # Add person sheets (Perso_*) in the middle
+    for name in sheet_names:
+        if name.startswith("Perso_") and name not in ordered:
+            ordered.append(name)
+    
+    # Add technical sheets at the end
+    for name in technical:
+        if name in sheet_names and name not in ordered:
+            ordered.append(name)
+    
+    # Add any remaining sheets
+    for name in sheet_names:
+        if name not in ordered:
+            ordered.append(name)
+    
+    # Reorder workbook sheets
+    for i, name in enumerate(ordered):
+        sheet = wb[name]
+        wb.move_sheet(sheet, offset=i - wb.worksheets.index(sheet))
+    
+    # Remove default "Sheet" if it exists and is empty
+    if "Sheet" in wb.sheetnames:
+        del wb["Sheet"]
     
     # Save
     if isinstance(output, (str, Path)):

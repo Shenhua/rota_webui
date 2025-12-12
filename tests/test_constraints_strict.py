@@ -1,9 +1,8 @@
 """Tests for strict constraints, specifically the 48h rolling window."""
-import pytest
-from rota.models.schedule import Schedule, Assignment
-from rota.models.shift import ShiftType
-from rota.solver.validation import ValidationResult, validate_schedule
 from rota.models.person import Person
+from rota.models.schedule import Assignment, Schedule
+from rota.models.shift import ShiftType
+
 # from rota.solver.edo import EdoPlan # Removed to avoid import error
 
 

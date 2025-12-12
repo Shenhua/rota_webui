@@ -1,7 +1,8 @@
 
-from rota.solver.weekend import WeekendSolver, WeekendConfig
-from rota.models.person import Person
 import logging
+
+from rota.models.person import Person
+from rota.solver.weekend import WeekendConfig, WeekendSolver
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

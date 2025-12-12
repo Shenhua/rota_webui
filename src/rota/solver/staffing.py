@@ -14,27 +14,18 @@ from rota.utils.logging_setup import get_logger, log_function_call
 
 logger = get_logger("rota.solver.staffing")
 
+from rota.models.rules import RULES, SHIFTS
+
 # Days of the week (French abbrev) - Weekdays only
 JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven"]
 
-# Shift hours for 48h constraint
-SHIFT_HOURS = {
-    "D": 10,  # Jour: 7h30-17h30 = 10h
-    "J": 10,  # Alias for D (ShiftType.DAY)
-    "S": 10,  # Soir: 9h30-19h30 = 10h
-    "N": 12,  # Nuit: 19h30-7h30 = 12h
-}
-
 # Fixed staffing per day (from specification)
-FIXED_STAFFING = {
-    "D": 4,  # 4 pairs = 8 people for Jour
-    "S": 1,  # 1 solo person for Soir
-    "N": 1,  # 1 pair = 2 people for Nuit
-}
+FIXED_STAFFING = RULES.default_staffing
 
 # Shift types that use pairs vs solo
-PAIR_SHIFTS = {"D", "N"}  # 2 people per slot
-SOLO_SHIFTS = {"S"}  # 1 person per slot
+# Derived from SHIFTS config
+PAIR_SHIFTS = {code for code, cfg in SHIFTS.items() if not cfg.is_solo}
+SOLO_SHIFTS = {code for code, cfg in SHIFTS.items() if cfg.is_solo}
 
 
 @dataclass
@@ -175,7 +166,7 @@ def calculate_daily_hours() -> int:
     hours = 0
     for shift, slots in FIXED_STAFFING.items():
         if shift in PAIR_SHIFTS:
-            hours += slots * 2 * SHIFT_HOURS[shift]
+            hours += slots * 2 * SHIFTS[shift].hours
         else:
-            hours += slots * SHIFT_HOURS[shift]
+            hours += slots * SHIFTS[shift].hours
     return hours

@@ -1,10 +1,11 @@
 """Tests for pair-based solver."""
 import pytest
+
+from rota.models.constraints import SolverConfig
 from rota.models.person import Person
-from rota.models.constraints import SolverConfig, FairnessMode
-from rota.solver.staffing import derive_staffing, JOURS
 from rota.solver.edo import build_edo_plan
-from rota.solver.pairs import solve_pairs, PairSchedule, PairAssignment
+from rota.solver.pairs import PairAssignment, PairSchedule, solve_pairs
+from rota.solver.staffing import JOURS, derive_staffing
 
 
 class TestSolvePairs:

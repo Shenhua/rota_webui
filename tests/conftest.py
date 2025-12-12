@@ -6,12 +6,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pytest
-import pandas as pd
 
-from rota.models.person import Person
-from rota.models.schedule import Schedule, Assignment
 from rota.models.constraints import SolverConfig
-from rota.models.shift import ShiftType, WEEKDAYS
+from rota.models.person import Person
 
 
 @pytest.fixture

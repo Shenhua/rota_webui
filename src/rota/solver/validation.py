@@ -8,10 +8,11 @@ from statistics import pstdev
 from typing import Dict, List
 
 from rota.models.person import Person
+from rota.models.rules import SHIFTS
 from rota.models.schedule import Schedule
-from rota.solver.edo import JOURS, EDOPlan
+from rota.solver.edo import EDOPlan
 from rota.solver.pairs import PairSchedule
-from rota.solver.staffing import SHIFT_HOURS
+from rota.solver.staffing import JOURS
 from rota.utils.logging_setup import get_logger
 
 logger = get_logger("rota.solver.validation")
@@ -230,15 +231,15 @@ def validate_schedule(
                     ))
     
     # 5. 48h/week validation - check each person's weekly hours
-    from rota.solver.staffing import SHIFT_HOURS
+    # from rota.solver.staffing import SHIFT_HOURS
     hours_exceeded = 0
     for name in names:
         for w in range(1, weeks + 1):
             week_hours = 0
             for d in days:
                 shift = works_on.get((name, w, d))
-                if shift and shift in SHIFT_HOURS:
-                    week_hours += SHIFT_HOURS[shift]
+                if shift and shift in SHIFTS:
+                    week_hours += SHIFTS[shift].hours
             
             if week_hours > 48:
                 hours_exceeded += 1
@@ -448,7 +449,11 @@ def check_rolling_48h(schedule: Schedule) -> List[str]:
         
     # Fill hours
     # Map day str to index 0-4 (Mon-Fri)
-    day_map = {"Lun": 0, "Mar": 1, "Mer": 2, "Jeu": 3, "Ven": 4}
+    # Map day str to index 0-4 (Mon-Fri) - support both French and English
+    day_map = {
+        "Lun": 0, "Mar": 1, "Mer": 2, "Jeu": 3, "Ven": 4,  # French
+        "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4,  # English
+    }
     
     for a in schedule.assignments:
         if a.day not in day_map:
@@ -463,7 +468,7 @@ def check_rolling_48h(schedule: Schedule) -> List[str]:
         if hasattr(s_val, 'value'):
             s_val = s_val.value
             
-        hours = SHIFT_HOURS.get(s_val, 0)
+        hours = SHIFTS[s_val].hours if s_val in SHIFTS else 0
         
         persons_in_shift = []
         if hasattr(a, 'person_a') and a.person_a: persons_in_shift.append(a.person_a)

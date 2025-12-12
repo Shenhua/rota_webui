@@ -13,14 +13,15 @@ Key model:
 """
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ortools.sat.python import cp_model
 
 from rota.models.constraints import FairnessMode, SolverConfig
 from rota.models.person import Person
+from rota.models.rules import SHIFTS
 from rota.solver.edo import EDOPlan
-from rota.solver.staffing import JOURS, SHIFT_HOURS, WeekStaffing
+from rota.solver.staffing import JOURS, WeekStaffing
 from rota.utils.logging_setup import SolverLogger, get_logger
 
 logger = get_logger("rota.solver.engine")
@@ -68,6 +69,38 @@ class PairSchedule:
         """Count shifts of a type for a person."""
         return sum(1 for a in self.assignments 
                    if (a.person_a == name or a.person_b == name) and a.shift == shift)
+    
+    def get_person_day_matrix(self, code_map: Optional[Dict[str, str]] = None) -> Dict[tuple, str]:
+        """
+        Build matrix of (name, week, day) -> shift code.
+        
+        Args:
+            code_map: Optional mapping of shift codes (e.g., {"D": "J"} for display)
+            
+        Returns:
+            Dict mapping (person_name, week, day) to shift code
+        """
+        matrix = {}
+        for a in self.assignments:
+            code = code_map.get(a.shift, a.shift) if code_map else a.shift
+            if a.person_a:
+                matrix[(a.person_a, a.week, a.day)] = code
+            if a.person_b:
+                matrix[(a.person_b, a.week, a.day)] = code
+        return matrix
+    
+    def get_slot_counts(self) -> Dict[tuple, int]:
+        """
+        Get assignment counts per (week, day, shift) slot.
+        
+        Returns:
+            Dict mapping (week, day, shift) to count of assigned slots
+        """
+        from collections import defaultdict
+        counts = defaultdict(int)
+        for a in self.assignments:
+            counts[(a.week, a.day, a.shift)] += 1
+        return dict(counts)
 
 
 def solve_pairs(
@@ -242,13 +275,13 @@ def solve_pairs(
             week_hours = []
             for d in days:
                 for s in ["D", "N", "S"]:
-                    week_hours.append(assign[p][w][d][s] * SHIFT_HOURS.get(s, 0))
+                    week_hours.append(assign[p][w][d][s] * SHIFTS[s].hours)
             model.Add(sum(week_hours) <= 48)
     
     # 7b. 48h rolling window constraint (across weeks, weekend = 0h)
     # Optimized: Direct linear constraint without intermediate IntVars
     slog.step("Constraint: 48h rolling window (Hard)")
-    day_to_idx = {"Lun": 0, "Mar": 1, "Mer": 2, "Jeu": 3, "Ven": 4}
+    # Note: Day indices are 0=Mon, 1=Tue, ..., 4=Fri
     
     # Pre-build assignment hour expressions for each person/day
     # hours_expr[p][(w,d)] = linear expression for hours worked
@@ -259,7 +292,7 @@ def solve_pairs(
             for d in days:
                 # Sum hours directly without creating new IntVar
                 hours_expr[p][(w, d)] = sum(
-                    assign[p][w][d][s] * SHIFT_HOURS.get(s, 0) 
+                    assign[p][w][d][s] * SHIFTS[s].hours
                     for s in ["D", "N", "S"]
                 )
     
@@ -564,8 +597,6 @@ def solve_pairs(
     
     # Stats
     stats = {
-        "night_spread": solver.Value(model.NewIntVar(0, 100, "ns")) if False else 0,  # Placeholder
-        "soir_spread": 0,
         "solve_time": solve_time,
     }
     

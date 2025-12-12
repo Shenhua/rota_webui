@@ -7,7 +7,12 @@ import pandas as pd
 from rota.io.csv_loader import load_team
 from rota.models.constraints import FairnessMode, SolverConfig
 from rota.models.person import Person
-from rota.solver.engine import solve as ortools_solve
+from rota.solver.edo import build_edo_plan
+
+# Use new solver components
+from rota.solver.optimizer import optimize
+from rota.solver.staffing import derive_staffing
+from rota.solver.validation import calculate_fairness, validate_schedule
 
 
 @dataclass
@@ -37,14 +42,15 @@ def solve(csv_path: str, cfg: Optional[Any] = None) -> SolveResult:
     
     # Build solver config from legacy config if provided
     solver_cfg = SolverConfig()
+    tries = 1
     
     if cfg is not None:
         # Extract values from legacy config
         if hasattr(cfg, "weeks"):
             solver_cfg.weeks = int(cfg.weeks)
         if hasattr(cfg, "tries"):
-            # OR-Tools doesn't need restarts - it's deterministic
-            pass
+            # Now we RESPECT tries!
+            tries = int(cfg.tries)
         if hasattr(cfg, "time_limit_seconds"):
             solver_cfg.time_limit_seconds = int(cfg.time_limit_seconds)
         if hasattr(cfg, "forbid_night_to_day"):
@@ -76,11 +82,78 @@ def solve(csv_path: str, cfg: Optional[Any] = None) -> SolveResult:
             elif fm in ("by-team",):
                 solver_cfg.fairness_mode = FairnessMode.BY_TEAM
     
-    # Run solver
-    schedule = ortools_solve(people, solver_cfg)
+    # Run solver (Pair-based optimizer)
+    # Note: custom_staffing defaults to None
+    schedule, best_seed, best_score = optimize(
+        people, 
+        solver_cfg, 
+        tries=tries,
+        seed=0,  # Auto-seed usually handled by caller or inside optimize (if 0/None)
+        cohort_mode=solver_cfg.fairness_mode.value
+    )
     
-    # Convert to legacy format
-    assignments_df = schedule.to_dataframe()
+    # Re-calculate validation metrics for result
+    edo_plan = build_edo_plan(people, solver_cfg.weeks)
+    staffing = derive_staffing(people, solver_cfg.weeks, edo_plan.plan)
+    
+    if schedule.status in ["optimal", "feasible"]:
+        validation = validate_schedule(schedule, people, edo_plan, staffing)
+        fairness = calculate_fairness(schedule, people, solver_cfg.fairness_mode.value)
+        
+        # Build metrics dict
+        # violations_dict not needed for legacy counts format
+        # Actually validation.violations is list of Violation objects.
+        # But legacy likely expected raw dicts or objects? 
+        # engine.py returned 'schedule.violations' which was Dict[str, int] of counts? 
+        # Let's check engine.py outline again or older snippet.
+        # Snippet 133 says violations: Dict[str, int].
+        # But validation_result in validation.py has .violations as List[Violation].
+        # We need to adapt it. Legacy summary expects "vacancies" count.
+        
+        vacancies = validation.slots_vides
+        
+        # Reconstruct counters for legacy metrics_json
+        # Summary dict (counts)
+        violations_counts = {
+            "vacancies": vacancies,
+            "rolling_48h": validation.rolling_48h_violations,
+            "night_to_day": validation.nuit_suivie_travail,
+            "soiree_to_day": validation.soir_vers_jour
+        }
+        
+        fairness_dict = {
+            "night_std": fairness.night_std,
+            "eve_std": fairness.eve_std
+        }
+    else:
+        violations_counts = {}
+        fairness_dict = {}
+        vacancies = 0
+
+    # Convert assignments (PairSchedule) -> DataFrame (Legacy format)
+    rows = []
+    for a in schedule.assignments:
+        # Flatten pair
+        # Person A
+        if a.person_a:
+             rows.append({
+                 "name": a.person_a,
+                 "week": a.week,
+                 "day": a.day,
+                 "shift": a.shift # "D", "N", "S"
+             })
+        # Person B (if any)
+        if a.person_b:
+             rows.append({
+                 "name": a.person_b,
+                 "week": a.week,
+                 "day": a.day,
+                 "shift": a.shift
+             })
+    
+    assignments_df = pd.DataFrame(rows)
+    if assignments_df.empty:
+         assignments_df = pd.DataFrame(columns=["name", "week", "day", "shift"])
     
     summary = {
         "weeks": schedule.weeks,
@@ -88,12 +161,13 @@ def solve(csv_path: str, cfg: Optional[Any] = None) -> SolveResult:
         "score": schedule.score,
         "status": schedule.status,
         "solve_time": schedule.solve_time_seconds,
-        "vacancies": schedule.violations.get("vacancies", 0),
+        "vacancies": vacancies,
+        "best_seed": best_seed
     }
     
     metrics_json = {
-        "violations": schedule.violations,
-        "fairness": schedule.fairness_metrics,
+        "violations": violations_counts,
+        "fairness": fairness_dict,
         "config": solver_cfg.to_dict(),
     }
     

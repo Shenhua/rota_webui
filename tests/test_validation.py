@@ -1,16 +1,17 @@
 """Tests for validation and scoring."""
 import pytest
-from rota.models.person import Person
+
 from rota.models.constraints import SolverConfig
-from rota.solver.staffing import derive_staffing, JOURS
+from rota.models.person import Person
 from rota.solver.edo import build_edo_plan
-from rota.solver.pairs import solve_pairs, PairSchedule, PairAssignment
+from rota.solver.pairs import PairAssignment, PairSchedule, solve_pairs
+from rota.solver.staffing import derive_staffing
 from rota.solver.validation import (
-    validate_schedule,
+    FairnessMetrics,
+    ValidationResult,
     calculate_fairness,
     score_solution,
-    ValidationResult,
-    FairnessMetrics,
+    validate_schedule,
 )
 
 

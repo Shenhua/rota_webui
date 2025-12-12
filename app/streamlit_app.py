@@ -10,8 +10,14 @@ import sys
 import pandas as pd
 import streamlit as st
 
-# Add src to python path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
+# Add src and project root to python path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
+
+from app.components.sidebar import render_sidebar
+from app.components.state import init_session_state
+from app.components.styling import apply_styling
+from app.components.utils import get_custom_staffing, get_solver_config, get_weekend_config
 
 from rota.io.csv_loader import load_team
 from rota.io.pair_export import (
@@ -22,139 +28,44 @@ from rota.io.pair_export import (
 )
 from rota.io.pdf_export import export_schedule_to_pdf
 from rota.io.results_export import export_results
-from rota.models.constraints import SolverConfig
 from rota.models.person import Person
 from rota.solver.edo import build_edo_plan
-from rota.solver.optimizer import optimize
+from rota.solver.optimizer import optimize, optimize_with_cache
 from rota.solver.staffing import JOURS, derive_staffing
+from rota.solver.stats import calculate_person_stats, stats_to_dict_list
 from rota.solver.validation import calculate_fairness, validate_schedule
 from rota.solver.weekend import WeekendConfig, WeekendSolver, validate_weekend_schedule
-from rota.utils.logging_setup import init_logging
 
-# Initialize logging at DEBUG for detailed verification
-init_logging(level="DEBUG")
-
-st.set_page_config(page_title="Rota Optimizer", page_icon="📅", layout="wide")
-
-# Custom CSS for colored cells
-st.markdown("""
-<style>
-.shift-J { background-color: #DDEEFF !important; color: #333; font-weight: bold; }
-.shift-S { background-color: #FFE4CC !important; color: #333; font-weight: bold; }
-.shift-N { background-color: #E6CCFF !important; color: #333; font-weight: bold; }
-.shift-A { background-color: #DDDDDD !important; color: #333; font-weight: bold; }
-.shift-OFF { background-color: #F5F5F5 !important; color: #999; }
-.shift-EDO { background-color: #D8D8D8 !important; color: #666; font-style: italic; }
-.kpi-card { padding: 1rem; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin: 0.5rem 0; }
-.kpi-value { font-size: 2rem; font-weight: bold; }
-.kpi-label { font-size: 0.9rem; opacity: 0.9; }
-</style>
-""", unsafe_allow_html=True)
+# Initialize
+init_session_state()
+apply_styling()
 
 st.title("📅 Rota Optimizer — Pair Scheduling")
 
-# Sidebar configuration
-st.sidebar.header("⚙️ Configuration")
+# Render Sidebar
+render_sidebar()
 
-# Initialize session state for persistent settings
-if "config_weeks" not in st.session_state:
-    st.session_state.config_weeks = 12
-if "config_tries" not in st.session_state:
-    st.session_state.config_tries = 2
-if "config_seed" not in st.session_state:
-    st.session_state.config_seed = 0
-if "config_time_limit" not in st.session_state:
-    st.session_state.config_time_limit = 60
+# Get Configs
+config_weeks = st.session_state.config_weeks
+config_tries = st.session_state.config_tries
+config_seed = st.session_state.config_seed
+merge_calendars = st.session_state.merge_calendars
 
-# Global options
-merge_calendars = st.sidebar.checkbox(
-    "📅 Mode Fusionné (Semaine + WE)", value=False,
-    help="Active l'optimisation conjointe et l'export fusionné"
-)
-st.session_state.merge_calendars = merge_calendars
+# Build Solver Config
+solver_cfg = get_solver_config()
+custom_staffing = get_custom_staffing()
+weekend_cfg_dict = get_weekend_config()
 
-weeks = st.sidebar.number_input("Semaines", min_value=1, max_value=24, value=st.session_state.config_weeks, key="config_weeks")
-tries = st.sidebar.number_input("Essais (multi-seed)", min_value=1, max_value=50, value=st.session_state.config_tries, key="config_tries")
-seed = st.sidebar.number_input("Seed (0=auto)", min_value=0, value=st.session_state.config_seed, key="config_seed")
-time_limit = st.sidebar.number_input("Temps limite (sec)", min_value=10, max_value=600, value=st.session_state.config_time_limit, key="config_time_limit")
+# Backwards-compat aliases for legacy code sections
+weeks = config_weeks
+tries = config_tries
+seed = config_seed
 
-# Advanced panel (Week)
-with st.sidebar.expander("🔧 Paramètres Avancés (Semaine)", expanded=False):
-    st.subheader("Contraintes dures")
-    forbid_night_to_day = st.checkbox("Repos après nuit", value=True, 
-        help="Interdire de travailler le jour après une nuit")
-    edo_enabled = st.checkbox("EDO activé", value=True,
-        help="Activer les jours de repos (1 jour/2 semaines)")
-    max_nights_sequence = st.number_input("Nuits consécutives max", min_value=1, max_value=5, value=3)
-    max_consecutive_days = st.number_input("Jours consécutifs max", min_value=3, max_value=14, value=6, help="Maximum de jours travaillés sans interruption (sauf si week-end travaillé)")
-    
-    st.subheader("Effectifs Requis (Par Jour)")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        req_pairs_D = st.number_input("Paires Jour", min_value=1, max_value=10, value=4, help="Nb de paires (x2 personnes)")
-    with c2:
-        req_solos_S = st.number_input("Pers. Soir", min_value=1, max_value=5, value=1, help="Nb de personnes (Solo)")
-    with c3:
-        req_pairs_N = st.number_input("Paires Nuit", min_value=1, max_value=5, value=1, help="Nb de paires (x2 personnes)")
-    
-    st.subheader("Poids objectif (soft)")
-    st.caption("Plus le poids est élevé, plus la contrainte est prioritaire")
-    weight_night_fairness = st.slider("σ Nuits", min_value=0, max_value=20, value=10)
-    weight_eve_fairness = st.slider("σ Soirs", min_value=0, max_value=20, value=3)
-    weight_deviation = st.slider("Écart cible", min_value=0, max_value=20, value=5)
-    weight_clopening = st.slider("Soir→Jour", min_value=0, max_value=10, value=1,
-        help="Pénalité pour enchaînement soir suivi d'un jour")
-    
-    st.subheader("Équité")
-    fairness_mode = st.selectbox("Mode cohorte", ["by-wd", "by-team", "none"])
+# Get people from session state (loaded via sidebar)
+people = st.session_state.get("people", [])
 
-# Advanced panel (Weekend)
-with st.sidebar.expander("🔧 Paramètres Avancés (Week-end)", expanded=False):
-    st.caption("Samedi & Dimanche")
-    
-    max_weekends_month = st.number_input(
-        "Max week-ends/mois", min_value=1, max_value=4, value=2,
-        help="Nombre maximum de week-ends travaillés par mois"
-    )
-    forbid_consecutive_nights = st.checkbox(
-        "Interdire 2 nuits de suite (WE)", value=True,
-        help="Si coché, empêche de faire Samedi Nuit ET Dimanche Nuit"
-    )
-    
-    st.subheader("Poids objectif")
-    weight_w_fairness = st.slider("σ Fairness", min_value=0, max_value=20, value=10, help="Équité charge globale")
-    weight_w_split = st.slider("Pénalité Split", min_value=0, max_value=20, value=5, help="Éviter de travailler Samedi ET Dimanche (sauf 24h)")
-    weight_w_24h = st.slider("Équité 24h", min_value=0, max_value=20, value=5, help="Répartir équitablement les shifts 24h")
-    weight_w_consecutive = st.slider("Pénalité 3 WE consécutifs", min_value=0, max_value=500, value=50, step=10, help="Pénalité forte pour travailler 3 week-ends de suite")
-
-# File upload
-uploaded_file = st.file_uploader("📂 Charger équipe (CSV)", type=["csv"])
-
-if True:
+if people:
     try:
-        if uploaded_file:
-            df = pd.read_csv(uploaded_file)
-            people = load_team(df)
-            st.success(f"✅ {len(people)} personnes chargées")
-        else:
-            people = [Person(name=f"P4_{i+1}", workdays_per_week=4, edo_eligible=True) for i in range(12)] + \
-                     [Person(name=f"P3_{i+1}", workdays_per_week=3, edo_eligible=False) for i in range(4)]
-            st.info("ℹ️ Mode démo: Équipe par défaut chargée (16 personnes).")
-        
-        # Show team
-        with st.expander("👥 Équipe", expanded=False):
-            team_data = []
-            for p in people:
-                team_data.append({
-                    "Nom": p.name,
-                    "Jours/sem": p.workdays_per_week,
-                    "EDO": "✓" if p.edo_eligible else "",
-                    "EDO fixe": p.edo_fixed_day or "",
-                    "Préfère nuit": "✓" if p.prefers_night else "",
-                    "Pas soir": "✓" if p.no_evening else "",
-                    "Max nuits": p.max_nights if p.max_nights < 1000 else "",
-                })
-            st.dataframe(pd.DataFrame(team_data), use_container_width=True)
         
         if "schedule" not in st.session_state:
             st.session_state.schedule = None
@@ -194,46 +105,41 @@ if True:
             tab_downloads = tabs[2]
 
         with tab_week:
-            if not merge_calendars:
-                col_btn1, col_btn2 = st.columns([2, 1])
-                with col_btn1:
-                    if st.button("🚀 Générer Planning Semaine", type="primary", use_container_width=True):
-                        trigger_week = True
-                with col_btn2:
-                    if st.button("⚠️ Stress Test", help="Test impossible demand to verify defect logging", use_container_width=True):
-                        trigger_week = True
-                        run_stress = True
+            # Check if sidebar triggered optimization
+            if st.session_state.get("trigger_optimize"):
+                trigger_week = True
+                st.session_state.trigger_optimize = False  # Reset trigger
 
             if trigger_week:
-                with st.spinner("Optimisation Semaine en cours..." if not run_stress else "🔥 Stress Test en cours..."):
-                    config = SolverConfig(
-                        weeks=weeks,
-                        time_limit_seconds=time_limit,
-                        forbid_night_to_day=forbid_night_to_day,
-                        max_nights_sequence=max_nights_sequence,
-                        max_consecutive_days=max_consecutive_days,
-                    )
+                # Check if stress test is enabled in sidebar
+                run_stress = st.session_state.get("cfg_stress_test", False)
+                spinner_msg = "🔥 Stress Test en cours..." if run_stress else "Optimisation Semaine en cours..."
+                
+                with st.spinner(spinner_msg):
+                    # Use pre-built config
+                    config = solver_cfg
                     
-                    # Custom staffing from UI
-                    custom_staffing = {"D": req_pairs_D, "S": req_solos_S, "N": req_pairs_N}
-                    
-                    # For stress test, demand way more than capacity
+                    # For stress test, override custom staffing
+                    run_staffing = custom_staffing.copy()
                     if run_stress:
-                        custom_staffing = {"D": 6, "S": 2, "N": 2} # ~50% more than normal
+                        run_staffing = {"D": 6, "S": 2, "N": 2}  # ~50% more than normal
                     
-                    actual_seed = seed if seed > 0 else None
-                    schedule, best_seed, best_score = optimize(
-                        people, config, tries=tries, seed=actual_seed, cohort_mode=fairness_mode,
-                        custom_staffing=custom_staffing
+                    actual_seed = config_seed if config_seed > 0 else None
+                    # Use optimize_with_cache for study persistence
+                    schedule, best_seed, best_score, study_hash = optimize_with_cache(
+                        people, config, tries=config_tries, seed=actual_seed, 
+                        cohort_mode=config.fairness_mode.value,
+                        custom_staffing=run_staffing,
+                        use_cache=True,
                     )
                     
                     # Accept feasible or optimal
                     if schedule.status in ["optimal", "feasible"]:
                         # Calculate all artifacts
-                        edo_plan = build_edo_plan(people, weeks)
-                        staffing = derive_staffing(people, weeks, edo_plan.plan, custom_staffing=custom_staffing)
+                        edo_plan = build_edo_plan(people, config_weeks)
+                        staffing = derive_staffing(people, config_weeks, edo_plan.plan, custom_staffing=run_staffing)
                         validation = validate_schedule(schedule, people, edo_plan, staffing)
-                        fairness = calculate_fairness(schedule, people, fairness_mode)
+                        fairness = calculate_fairness(schedule, people, config.fairness_mode.value)
                         
                         # Save to session state
                         st.session_state.schedule = schedule
@@ -243,6 +149,7 @@ if True:
                         st.session_state.best_score = best_score
                         st.session_state.edo_plan = edo_plan
                         st.session_state.staffing = staffing
+                        st.session_state.study_hash = study_hash
                     # The else block for schedule status is now handled in the display section below.
 
             # DISPLAY RESULTS FROM SESSION STATE
@@ -250,29 +157,46 @@ if True:
                 schedule = st.session_state.schedule
                 
                 if schedule.status in ["optimal", "feasible"]:
-                    validation = st.session_state.validation
-                    fairness = st.session_state.fairness
-                    best_seed = st.session_state.best_seed
-                    best_score = st.session_state.best_score
-                    edo_plan = st.session_state.edo_plan
-                    staffing = st.session_state.get("staffing", None)  # Retrieve for display
+                    validation = st.session_state.get("validation")
+                    fairness = st.session_state.get("fairness")
+                    best_seed = st.session_state.get("best_seed", 0)
+                    best_score = st.session_state.get("best_score", 0)
+                    edo_plan = st.session_state.get("edo_plan")
+                    staffing = st.session_state.get("staffing")
+                    
+                    # Recompute if missing (e.g. loaded from cache)
+                    if not edo_plan or not validation:
+                        from rota.solver.edo import build_edo_plan
+                        from rota.solver.staffing import derive_staffing
+                        from rota.solver.validation import calculate_fairness, validate_schedule
+                        
+                        edo_plan = build_edo_plan(people, config_weeks)
+                        staffing = derive_staffing(people, config_weeks, edo_plan.plan)
+                        validation = validate_schedule(schedule, people, edo_plan, staffing)
+                        fairness = calculate_fairness(schedule, people, solver_cfg.fairness_mode.value)
+                        
+                        # Save back
+                        st.session_state.edo_plan = edo_plan
+                        st.session_state.staffing = staffing
+                        st.session_state.validation = validation
+                        st.session_state.fairness = fairness
                     
                     # Export results for analysis
                     results_config = {
-                        "weeks": weeks,
-                        "time_limit_seconds": time_limit,
-                        "tries": tries,
+                        "weeks": solver_cfg.weeks,
+                        "time_limit_seconds": solver_cfg.time_limit_seconds,
+                        "tries": config_tries,
                         "seed": best_seed,
-                        "forbid_night_to_day": forbid_night_to_day,
-                        "edo_enabled": edo_enabled,
-                        "max_nights_sequence": max_nights_sequence,
-                        "fairness_mode": fairness_mode,
+                        "forbid_night_to_day": solver_cfg.forbid_night_to_day,
+                        "edo_enabled": solver_cfg.edo_enabled,
+                        "max_nights_sequence": solver_cfg.max_nights_sequence,
+                        "fairness_mode": solver_cfg.fairness_mode.value,
                     }
                     results_weights = {
-                        "night_fairness": weight_night_fairness,
-                        "eve_fairness": weight_eve_fairness,
-                        "deviation": weight_deviation,
-                        "clopening": weight_clopening,
+                        "night_fairness": solver_cfg.night_fairness_weight,
+                        "eve_fairness": solver_cfg.evening_fairness_weight,
+                        "deviation": 5.0, # Default in optimizer.py
+                        "clopening": 1.0, # Default
                     }
                     results_path = export_results(
                         schedule, people, edo_plan, validation, fairness,
@@ -294,8 +218,8 @@ if True:
                     total_capacity = 0
                     for p in people:
                          # Capacity
-                         edo_w = sum(1 for w in range(1, weeks+1) if p.name in edo_plan.plan.get(w, set()))
-                         total_capacity += (p.workdays_per_week * weeks - edo_w)
+                         edo_w = sum(1 for w in range(1, config_weeks+1) if p.name in edo_plan.plan.get(w, set()))
+                         total_capacity += (p.workdays_per_week * config_weeks - edo_w)
                          # Worked
                          total_worked += schedule.count_shifts(p.name, 'D') + \
                                          schedule.count_shifts(p.name, 'S') + \
@@ -362,7 +286,7 @@ if True:
                     st.header("📊 Tableau de bord")
                     
                     # Calculate capacity utilization
-                    total_capacity = sum(p.workdays_per_week for p in people) * weeks
+                    total_capacity = sum(p.workdays_per_week for p in people) * config_weeks
                     total_worked = sum(1 for a in schedule.assignments for _ in [a.person_a, a.person_b] if _)
                     capacity_utilization = (total_worked / total_capacity * 100) if total_capacity > 0 else 0
                     
@@ -379,12 +303,11 @@ if True:
                                     else:  # Solo: each slot = 1 person
                                         unfilled_person_shifts += (req_slots - assigned)
                     
-                    # Total constraint violations
+                    # Total constraint violations (excludes gaps which are shown separately)
                     total_violations = (
                         validation.rolling_48h_violations + 
                         validation.nuit_suivie_travail + 
-                        validation.soir_vers_jour +
-                        max(0, unfilled_person_shifts)
+                        validation.soir_vers_jour
                     )
                     
                     # Primary KPIs
@@ -402,6 +325,15 @@ if True:
                         st.metric(f"{viol_icon} Violations", total_violations)
                     with col5:
                         st.metric("⏱️ Temps", f"{schedule.solve_time_seconds:.1f}s")
+                    
+                    # Study cache info
+                    study_hash = st.session_state.get("study_hash", None)
+                    if study_hash:
+                        from rota.solver.study_manager import StudyManager
+                        manager = StudyManager()
+                        summary = manager.get_study_summary(study_hash)
+                        if summary:
+                            st.caption(f"📚 Étude: `{study_hash[:8]}...` | {summary.total_trials} essais | Meilleur: {summary.best_score:.1f} (seed {summary.best_seed})")
                     
                     # Secondary metrics (detailed)
                     with st.expander("📈 Détails des métriques", expanded=False):
@@ -422,6 +354,52 @@ if True:
                             st.metric("σ Soirs", f"{fairness.eve_std:.2f}")
                         
                         st.caption(f"🌱 Seed gagnant: {best_seed}")
+                    
+                    # Capacity Analysis
+                    with st.expander("📊 Analyse de Capacité", expanded=False):
+                        from rota.solver.capacity import calculate_capacity
+                        
+                        cap_analysis = calculate_capacity(schedule, people, staffing, edo_plan)
+                        
+                        # Summary row
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.metric("Capacité dispo.", f"{cap_analysis.net_capacity} jrs", 
+                                     delta=f"-{cap_analysis.total_edo_days} EDO")
+                        with col2:
+                            st.metric("Besoins totaux", f"{cap_analysis.total_required_person_shifts} shifts")
+                        with col3:
+                            st.metric("Affectés", f"{cap_analysis.total_assigned_person_shifts} shifts")
+                        with col4:
+                            balance_icon = "✅" if cap_analysis.capacity_balance >= 0 else "⚠️"
+                            st.metric(f"{balance_icon} Balance", f"{cap_analysis.capacity_balance:+d}")
+                        
+                        st.divider()
+                        
+                        # Per-shift breakdown
+                        st.markdown("**Par type de quart:**")
+                        shift_data = []
+                        for shift, data in cap_analysis.by_shift.items():
+                            shift_name = {"D": "Jour 🌅", "S": "Soir 🌆", "N": "Nuit 🌙"}.get(shift, shift)
+                            gap = data["gap"]
+                            shift_data.append({
+                                "Quart": shift_name,
+                                "Requis": data["required"],
+                                "Affectés": data["assigned"],
+                                "Écart": gap,
+                                "Status": "✅" if gap <= 0 else f"❌ -{gap}"
+                            })
+                        st.dataframe(pd.DataFrame(shift_data), use_container_width=True, hide_index=True)
+                        
+                        # Recommendation
+                        st.divider()
+                        st.markdown("**💡 Recommandation:**")
+                        if cap_analysis.agents_needed > 0.5:
+                            st.error(f"⚠️ **Besoin d'environ {cap_analysis.agents_needed:.1f} agents supplémentaires** pour couvrir tous les créneaux.")
+                        elif cap_analysis.excess_agent_days > 10:
+                            st.success(f"✅ **Équipe bien dimensionnée**. {cap_analysis.excess_agent_days:.0f} jours-agent disponibles en marge.")
+                        else:
+                            st.info(f"ℹ️ L'équipe est à **{cap_analysis.utilization_percent:.0f}%** de sa capacité. Marge confortable.")
                         
                         # Violation breakdown by type
                         if validation.violations:
@@ -492,6 +470,8 @@ if True:
                             matrix_data.append(row)
                         
                         df_matrix = pd.DataFrame(matrix_data)
+                        # Ensure unique index for Styler compatibility
+                        df_matrix = df_matrix.drop_duplicates(subset=["Nom"])
                         df_matrix = df_matrix.set_index("Nom")
                         
                         # Color function
@@ -523,9 +503,9 @@ if True:
                                 day_assignments = [a for a in schedule.assignments if a.week == w and a.day == d]
                                 
                                 # Required slots (from staffing if available)
-                                req_d = req_pairs_D * 2  # D pairs = 2 people each
-                                req_s = req_solos_S      # S is solo
-                                req_n = req_pairs_N * 2  # N pairs = 2 people each
+                                req_d = st.session_state.get("cfg_req_pairs_D", 4) * 2  # D pairs = 2 people each
+                                req_s = st.session_state.get("cfg_req_solos_S", 1)      # S is solo
+                                req_n = st.session_state.get("cfg_req_pairs_N", 1) * 2  # N pairs = 2 people each
                                 total_required = req_d + req_s + req_n
                                 
                                 # Actual filled
@@ -605,7 +585,11 @@ if True:
                                     (1 if a.person_a else 0) + (1 if a.person_b else 0)
                                     for a in week_assignments
                                 )
-                                required = 5 * (req_pairs_D * 2 + req_solos_S + req_pairs_N * 2)  # 5 days
+                                required = 5 * (
+                                    st.session_state.get("cfg_req_pairs_D", 4) * 2 +
+                                    st.session_state.get("cfg_req_solos_S", 1) +
+                                    st.session_state.get("cfg_req_pairs_N", 1) * 2
+                                )  # 5 days
                                 pct = (filled / required * 100) if required > 0 else 100
                                 weekly_data.append({"Semaine": w, "Couverture %": pct})
                             
@@ -647,24 +631,9 @@ if True:
                     with t5:
                         st.subheader("Statistiques par personne")
                         
-                        stats_data = []
-                        name_to_person = {p.name: p for p in people}
-                        for p in people:
-                            name = p.name
-                            j = schedule.count_shifts(name, 'D')
-                            s = schedule.count_shifts(name, 'S')
-                            n = schedule.count_shifts(name, 'N')
-                            a = schedule.count_shifts(name, 'A')
-                            total = j + s + n + a
-                            
-                            edo_weeks = sum(1 for w in range(1, weeks+1) if name in edo_plan.plan.get(w, set()))
-                            target = p.workdays_per_week * weeks - edo_weeks
-                            delta = total - target
-                            stats_data.append({
-                                "Nom": name, 
-                                "Jours": j, "Soirs": s, "Nuits": n, "Admin": a,
-                                "Total": total, "Cible": target, "Δ": delta, "EDO": edo_weeks
-                            })
+                        # Use centralized stats calculation
+                        person_stats = calculate_person_stats(schedule, people, edo_plan)
+                        stats_data = stats_to_dict_list(person_stats)
                         
                         df_stats = pd.DataFrame(stats_data)
                         
@@ -745,7 +714,7 @@ if True:
                             schedule, people, edo_plan, pdf_buffer,
                             validation=validation, fairness=fairness,
                             weekend_result=weekend_for_pdf,
-                            config={"weeks": weeks, "tries": tries, "seed": best_seed, "edo_enabled": edo_enabled}
+                            config={"weeks": weeks, "tries": tries, "seed": best_seed, "edo_enabled": st.session_state.get("cfg_edo_enabled", True)}
                         )
                         
                         st.download_button(
@@ -768,13 +737,9 @@ if True:
                 st.write(", ".join(p.name for p in eligible))
 
             if not merge_calendars:
-                 if st.button("🚀 Générer Planning Week-end", key="btn_weekend", type="primary"):
-                     trigger_weekend = True
+                if st.button("🚀 Générer Planning Week-end", key="btn_weekend", type="primary"):
+                    trigger_weekend = True
 
-# Advanced panel (Weekend) - lines 96+ handled separately, this is the logic wiring block
-# Wait, I need to update the global/weekend logic block. 
-
-# ... inside tab_weekend ...
             if trigger_weekend:
                 with st.spinner("Optimisation week-end..."):
                     
@@ -788,20 +753,22 @@ if True:
                                     if a.week == w and a.day == "Ven" and a.shift == "N"]
                             names_list = []
                             for a in pairs:
-                                if a.person_a: names_list.append(a.person_a)
-                                if a.person_b: names_list.append(a.person_b)
+                                if a.person_a:
+                                    names_list.append(a.person_a)
+                                if a.person_b:
+                                    names_list.append(a.person_b)
                             friday_workers[w] = names_list
                     
                     w_config = WeekendConfig(
                         num_weeks=weeks,
                         staff_per_shift=2,
-                        time_limit_seconds=time_limit,
-                        max_weekends_per_month=max_weekends_month,
-                        weight_fairness=weight_w_fairness,
-                        weight_split_weekend=weight_w_split,
-                        weight_24h_balance=weight_w_24h,
-                        weight_consecutive_weekends=weight_w_consecutive,
-                        forbid_consecutive_nights=forbid_consecutive_nights
+                        time_limit_seconds=st.session_state.get("config_time_limit", 60),
+                        max_weekends_per_month=st.session_state.get("cfg_max_weekends_month", 2),
+                        weight_fairness=st.session_state.get("cfg_weight_w_fairness", 10),
+                        weight_split_weekend=st.session_state.get("cfg_weight_w_split", 5),
+                        weight_24h_balance=st.session_state.get("cfg_weight_w_24h", 5),
+                        weight_consecutive_weekends=st.session_state.get("cfg_weight_w_consecutive", 50),
+                        forbid_consecutive_nights=st.session_state.get("cfg_forbid_consecutive_nights_we", True)
                     )
                     w_solver = WeekendSolver(w_config, people, friday_night_workers=friday_workers)
                     result = w_solver.solve()
@@ -940,13 +907,13 @@ if True:
                         week_map = {}
                         # Fill week
                         for a in st.session_state.schedule.assignments:
-                             week_map.setdefault((a.person_a, a.week), {})[a.day] = a.shift
-                             if a.person_b:
-                                 week_map.setdefault((a.person_b, a.week), {})[a.day] = a.shift
+                            week_map.setdefault((a.person_a, a.week), {})[a.day] = a.shift
+                            if a.person_b:
+                                week_map.setdefault((a.person_b, a.week), {})[a.day] = a.shift
                         
                         # Fill weekend
                         for a in st.session_state.w_result.assignments:
-                             week_map.setdefault((a.person.name, a.week), {})[a.day] = a.shift
+                            week_map.setdefault((a.person.name, a.week), {})[a.day] = a.shift
                         
                         # Build DF (Wide Format)
                         merge_lines = []
@@ -970,11 +937,16 @@ if True:
                             df_merge = df_merge.set_index("Nom")
                         
                         def color_merge(val):
-                            if val == "N": return "background-color: #E6CCFF; color: black; font-weight: bold;"
-                            if val in ["D", "J"]: return "background-color: #DDEEFF; color: black; font-weight: bold;"
-                            if val == "S": return "background-color: #FFDDAA; color: black; font-weight: bold;"
-                            if val == "D+N": return "background-color: #FFCCAA; font-weight: bold; color: black;"
-                            if val == "A": return "background-color: #EEFFDD; color: black;"
+                            if val == "N":
+                                return "background-color: #E6CCFF; color: black; font-weight: bold;"
+                            if val in ["D", "J"]:
+                                return "background-color: #DDEEFF; color: black; font-weight: bold;"
+                            if val == "S":
+                                return "background-color: #FFDDAA; color: black; font-weight: bold;"
+                            if val == "D+N":
+                                return "background-color: #FFCCAA; font-weight: bold; color: black;"
+                            if val == "A":
+                                return "background-color: #EEFFDD; color: black;"
                             return ""
                         
                         st.dataframe(df_merge.style.map(color_merge), use_container_width=True, height=600)

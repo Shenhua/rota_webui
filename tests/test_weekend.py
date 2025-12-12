@@ -1,6 +1,6 @@
-import pytest
 from rota.models.person import Person
-from rota.solver.weekend import WeekendSolver, WeekendConfig
+from rota.solver.weekend import WeekendConfig, WeekendSolver
+
 
 def test_weekend_solver_basics():
     people = [

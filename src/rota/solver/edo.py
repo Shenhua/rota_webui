@@ -7,12 +7,10 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
 from rota.models.person import Person
+from rota.solver.staffing import JOURS
 from rota.utils.logging_setup import get_logger, log_function_call
 
 logger = get_logger("rota.solver.edo")
-
-# Days of the week (French abbrev)
-JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven"]
 
 
 @dataclass

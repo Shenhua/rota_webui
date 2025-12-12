@@ -1,18 +1,17 @@
 """Tests for logging infrastructure."""
 import logging
-import os
 import tempfile
 from pathlib import Path
 
 import pytest
 
 from rota.utils.logging_setup import (
-    setup_logging,
-    get_logger,
-    log_function_call,
-    log_constraint,
-    SolverLogger,
     TRACE,
+    SolverLogger,
+    get_logger,
+    log_constraint,
+    log_function_call,
+    setup_logging,
 )
 
 
