@@ -27,6 +27,9 @@ class Person:
     available_weekends: bool = True
     max_weekends_per_month: int = 2
     
+    # External contractor status
+    is_contractor: bool = False  # External contractors need tutoring (paired with regular)
+    
     # Computed at runtime
     id: int = field(default=0, compare=False)
 
@@ -67,7 +70,9 @@ class Person:
             "team": self.team,
             "available_weekends": self.available_weekends,
             "max_weekends_per_month": self.max_weekends_per_month,
+            "is_contractor": self.is_contractor,
         }
+
 
     @classmethod
     def from_dict(cls, d: dict) -> "Person":

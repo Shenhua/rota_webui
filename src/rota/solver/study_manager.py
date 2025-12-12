@@ -200,6 +200,29 @@ class StudyManager:
                 updated_at=datetime.fromisoformat(row[8]) if row[8] else datetime.now(),
             )
     
+    def get_study_config(self, study_hash: str) -> Optional[Dict]:
+        """Get the config JSON stored with a study."""
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT config_json FROM studies WHERE study_hash = ?",
+                (study_hash,)
+            ).fetchone()
+            
+            if row and row[0]:
+                return json.loads(row[0])
+            return None
+    
+    def get_most_recent_config(self) -> Optional[Dict]:
+        """Get config from the most recently updated study."""
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT config_json FROM studies ORDER BY updated_at DESC LIMIT 1"
+            ).fetchone()
+            
+            if row and row[0]:
+                return json.loads(row[0])
+            return None
+    
     def list_studies(self, limit: int = 20) -> List[StudySummary]:
         """List all studies, most recent first."""
         with sqlite3.connect(self.db_path) as conn:
@@ -233,10 +256,20 @@ class StudyManager:
         config: SolverConfig, 
         people: List[Person],
         study_name: Optional[str] = None,
+        custom_staffing: Optional[Dict] = None,
+        weekend_config: Optional[Dict] = None,
     ):
-        """Create a new study entry."""
+        """Create a new study entry with full configuration context."""
         now = datetime.now().isoformat()
-        config_json = json.dumps(config.to_dict(), ensure_ascii=False)
+        
+        # Serialize full configuration context
+        config_dict = config.to_dict()
+        if custom_staffing:
+            config_dict["custom_staffing"] = custom_staffing
+        if weekend_config:
+            config_dict["weekend_config"] = weekend_config
+            
+        config_json = json.dumps(config_dict, ensure_ascii=False)
         team_json = json.dumps([p.to_dict() for p in people], ensure_ascii=False)
         
         with sqlite3.connect(self.db_path) as conn:

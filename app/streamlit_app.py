@@ -77,15 +77,14 @@ if people:
             st.session_state.best_seed = None
             st.session_state.best_score = None
 
-        # Triggers
-        trigger_week = False
-        trigger_weekend = False
+        # Triggers - controlled from sidebar
+        trigger_week = st.session_state.get("trigger_optimize", False)
+        trigger_weekend = trigger_week and merge_calendars  # Run weekend if merged mode
         run_stress = False
         
-        if merge_calendars:
-            if st.button("🚀 Générer Planning Complet (Semaine + Week-end)", type="primary", use_container_width=True):
-                trigger_week = True
-                trigger_weekend = True
+        # Clear trigger after reading
+        if trigger_week:
+            st.session_state.trigger_optimize = False
         
         # Tabs
         tabs_labels = ["📅 Planning Semaine", "🏖️ Planning Week-end"]
@@ -130,6 +129,7 @@ if people:
                         people, config, tries=config_tries, seed=actual_seed, 
                         cohort_mode=config.fairness_mode.value,
                         custom_staffing=run_staffing,
+                        weekend_config=weekend_cfg_dict,
                         use_cache=True,
                     )
                     

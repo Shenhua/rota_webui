@@ -626,6 +626,37 @@ def export_merged_calendar(
     else:
         ws_tdb.append(["(Validation non disponible)", ""])
     
+    # Capacity Analysis section
+    if staffing and edo_plan:
+        ws_tdb.append([])
+        ws_tdb.append(["--- Analyse Capacité ---", ""])
+        ws_tdb[ws_tdb.max_row][0].font = font_bold
+        
+        try:
+            from rota.solver.capacity import calculate_capacity
+            cap = calculate_capacity(weekday_schedule, people, staffing, edo_plan)
+            
+            ws_tdb.append(["Capacité équipe (jours)", cap.net_capacity])
+            ws_tdb.append(["Besoins totaux (shifts)", cap.total_required_person_shifts])
+            ws_tdb.append(["Affectés (shifts)", cap.total_assigned_person_shifts])
+            ws_tdb.append(["Balance", cap.capacity_balance])
+            ws_tdb.append(["Utilisation (%)", f"{cap.utilization_percent:.1f}%"])
+            
+            # Per-shift breakdown
+            for shift, data in cap.by_shift.items():
+                shift_name = {"D": "Jour", "S": "Soir", "N": "Nuit"}.get(shift, shift)
+                gap = data["gap"]
+                status = "OK" if gap <= 0 else f"Manque {gap}"
+                ws_tdb.append([f"  {shift_name}: Requis/Affectés/Écart", f"{data['required']}/{data['assigned']}/{status}"])
+            
+            # Recommendation
+            if cap.agents_needed > 0.5:
+                ws_tdb.append(["⚠️ Agents supplémentaires requis", f"+{cap.agents_needed:.1f}"])
+            elif cap.excess_agent_days > 10:
+                ws_tdb.append(["✅ Marge disponible (jours-agent)", f"{cap.excess_agent_days:.0f}"])
+        except Exception as e:
+            ws_tdb.append(["(Erreur analyse capacité)", str(e)])
+    
     # Weekend section (if enabled)
     if weekend_result and weekend_result.assignments:
         ws_tdb.append([])
@@ -633,6 +664,7 @@ def export_merged_calendar(
         ws_tdb[ws_tdb.max_row][0].font = font_bold
         ws_tdb.append(["Assignations WE", len(weekend_result.assignments)])
         ws_tdb.append(["Statut WE", weekend_result.status])
+
     
     # Options section
     ws_tdb.append([])

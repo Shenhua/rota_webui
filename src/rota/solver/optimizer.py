@@ -204,6 +204,7 @@ def optimize_with_cache(
     seed: Optional[int] = None,
     cohort_mode: str = "by-wd",
     custom_staffing: Optional[Dict[str, int]] = None,
+    weekend_config: Optional[Dict] = None,
     use_cache: bool = True,
 ) -> Tuple[PairSchedule, int, float, str]:
     """
@@ -221,6 +222,7 @@ def optimize_with_cache(
         seed: Base seed
         cohort_mode: For fairness calculation
         custom_staffing: Optional staffing override
+        weekend_config: Optional weekend configuration
         use_cache: Whether to use study caching (default True)
         
     Returns:
@@ -229,11 +231,18 @@ def optimize_with_cache(
     from rota.solver.study_manager import StudyManager, compute_study_hash
     
     manager = StudyManager()
-    study_hash = compute_study_hash(config, people)
+    study_hash = compute_study_hash(config, people, custom_staffing, weekend_config)
     
     # Check if study exists
     if not manager.study_exists(study_hash):
-        manager.create_study(study_hash, config, people)
+        manager.create_study(
+            study_hash, 
+            config, 
+            people, 
+            custom_staffing=custom_staffing, 
+            weekend_config=weekend_config
+        )
+
     
     # Get previously tried seeds to avoid duplicates
     tried_seeds = set(manager.get_tried_seeds(study_hash)) if use_cache else set()

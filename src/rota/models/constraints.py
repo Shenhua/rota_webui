@@ -59,6 +59,7 @@ class SolverConfig:
     max_nights_sequence: int = RULES.default_max_nights_sequence  # Max consecutive nights
     max_evenings_sequence: int = 3  # Max consecutive evenings
     max_days_per_week: int = 5  # Max work days per week
+    forbid_contractor_pairs: bool = True  # Never pair two contractors together (for tutoring)
     
     # EDO policy
     edo_enabled: bool = True
@@ -94,11 +95,13 @@ class SolverConfig:
             "max_nights_sequence": self.max_nights_sequence,
             "max_evenings_sequence": self.max_evenings_sequence,
             "max_days_per_week": self.max_days_per_week,
+            "forbid_contractor_pairs": self.forbid_contractor_pairs,
             "edo_enabled": self.edo_enabled,
             "fairness_mode": self.fairness_mode.value,
             "night_fairness_weight": self.night_fairness_weight,
             "evening_fairness_weight": self.evening_fairness_weight,
         }
+
 
     @classmethod
     def from_dict(cls, d: Dict) -> "SolverConfig":

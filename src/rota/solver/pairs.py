@@ -361,7 +361,21 @@ def solve_pairs(
                 for d in days:
                     model.Add(assign[p][w][d]["S"] == 0)
     
+    # 11. Forbid contractor pairs (contractors must be paired with regular staff)
+    if config.forbid_contractor_pairs:
+        contractors = [p.name for p in people if p.is_contractor]
+        if len(contractors) >= 2:
+            slog.step(f"Constraint: No contractor pairs ({len(contractors)} contractors)")
+            # For pair shifts (D, N), if 2+ contractors work the same shift, that's a violation
+            for w in range(1, weeks + 1):
+                for d in days:
+                    for s in ["D", "N"]:  # Only pair shifts
+                        # Sum of contractors on this shift must be <= 1
+                        contractor_count = sum(assign[p][w][d][s] for p in contractors)
+                        model.Add(contractor_count <= 1)
+    
     # ========== Soft Constraints (Objective) ==========
+
     slog.phase("Adding Soft Constraints")
     objective_terms = []
     

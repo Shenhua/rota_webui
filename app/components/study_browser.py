@@ -138,6 +138,45 @@ def load_study_result(study_hash: str, people: list = None, config = None):
         return False
     
     # Get study summary to load config/team if not provided
+    saved_config = manager.get_study_config(study_hash)
+    if saved_config:
+        # Update session state config to match loaded study
+        st.session_state["config_weeks"] = saved_config.get("weeks", 12)
+        st.session_state["cfg_forbid_night_to_day"] = saved_config.get("forbid_night_to_day", True)
+        st.session_state["cfg_edo_enabled"] = saved_config.get("edo_enabled", True)
+        st.session_state["cfg_max_nights_seq"] = saved_config.get("max_nights_sequence", 3)
+        st.session_state["cfg_max_consecutive_days"] = saved_config.get("max_consecutive_days", 6)
+        st.session_state["cfg_forbid_contractor_pairs"] = saved_config.get("forbid_contractor_pairs", True)
+        
+        # Restore Fairness
+        st.session_state["cfg_fairness_mode"] = saved_config.get("fairness_mode", "by-wd")
+        st.session_state["cfg_weight_night_fairness"] = saved_config.get("night_fairness_weight", 10.0)
+        st.session_state["cfg_weight_eve_fairness"] = saved_config.get("evening_fairness_weight", 3.0)
+        
+        # Restore Staffing (if saved in config_json)
+        if "custom_staffing" in saved_config:
+            staffing = saved_config["custom_staffing"]
+            st.session_state["cfg_req_pairs_D"] = staffing.get("D", 4)
+            st.session_state["cfg_req_solos_S"] = staffing.get("S", 1)
+            st.session_state["cfg_req_pairs_N"] = staffing.get("N", 1)
+            
+        # Restore Weekend Config (if saved in config_json)
+        if "weekend_config" in saved_config:
+            wc = saved_config["weekend_config"]
+            st.session_state["cfg_max_weekends_month"] = wc.get("max_weekends_month", 2)
+            st.session_state["cfg_forbid_consecutive_nights_we"] = wc.get("forbid_consecutive_nights", True)
+            
+            # Restore weights if present
+            weights = wc.get("weights", {})
+            st.session_state["cfg_weight_w_fairness"] = weights.get("fairness", 10)
+            st.session_state["cfg_weight_w_split"] = weights.get("split", 5)
+            st.session_state["cfg_weight_w_24h"] = weights.get("24h", 5)
+            st.session_state["cfg_weight_w_consecutive"] = weights.get("consecutive", 50)
+        
+        # Also ensure st.session_state["trigger_optimize"] doesn't re-fire
+
+        st.session_state["config_restored"] = True  # Signal that we're in sync
+
     summary = manager.get_study_summary(study_hash)
     
     # Load schedule

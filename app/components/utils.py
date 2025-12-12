@@ -17,6 +17,7 @@ def get_solver_config() -> SolverConfig:
     cfg.edo_enabled = st.session_state.get("cfg_edo_enabled", True)
     cfg.max_nights_sequence = st.session_state.get("cfg_max_nights_seq", 3)
     cfg.max_consecutive_days = st.session_state.get("cfg_max_consecutive_days", 6)
+    cfg.forbid_contractor_pairs = st.session_state.get("cfg_forbid_contractor_pairs", True)
     
     # Fairness
     fm_raw = st.session_state.get("cfg_fairness_mode", "by-wd")

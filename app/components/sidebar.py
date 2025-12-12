@@ -48,6 +48,7 @@ def render_sidebar():
                 "Max Nuits": p.max_nights if p.max_nights < 99 else None,
                 "WE dispo": p.available_weekends,
                 "Max WE/mois": p.max_weekends_per_month,
+                "Externe": p.is_contractor,
                 "Équipe": p.team or "",
             } for p in people])
             
@@ -62,6 +63,7 @@ def render_sidebar():
                 "Max Nuits": st.column_config.NumberColumn("Max N", min_value=0, max_value=50, width="small"),
                 "WE dispo": st.column_config.CheckboxColumn("WE", width="small"),
                 "Max WE/mois": st.column_config.NumberColumn("WE/m", min_value=0, max_value=4, step=1, width="small"),
+                "Externe": st.column_config.CheckboxColumn("Ext", width="small", help="Externe/Contractuel"),
                 "Équipe": st.column_config.TextColumn("Team", width="small"),
             }
             
@@ -89,11 +91,18 @@ def render_sidebar():
                             max_nights=int(row["Max Nuits"]) if pd.notna(row["Max Nuits"]) else 99,
                             available_weekends=bool(row["WE dispo"]) if pd.notna(row["WE dispo"]) else True,
                             max_weekends_per_month=int(row["Max WE/mois"]) if pd.notna(row["Max WE/mois"]) else 2,
+                            is_contractor=bool(row["Externe"]) if pd.notna(row["Externe"]) else False,
                             team=str(row["Équipe"]) if pd.notna(row["Équipe"]) else "",
                         ))
+                # Only update if team actually changed
+                # Compare full list of objects (dataclass equality checks all fields)
                 if updated_people:
-                    st.session_state.people = updated_people
-                    people = updated_people  # Update local reference
+                    current_people = st.session_state.get("people", [])
+                    if updated_people != current_people:
+                        st.session_state.people = updated_people
+                        people = updated_people  # Update local reference
+                        # No st.rerun() needed - downstream code uses updated 'people' variable
+
     
     st.sidebar.divider()
     
@@ -111,7 +120,18 @@ def render_sidebar():
         manager = StudyManager()
         study_hash = compute_study_hash(solver_cfg, people, custom_staffing, weekend_config)
         
+        # DEBUG: Show hash and available studies
+        all_studies = manager.list_studies(limit=3)
+        st.sidebar.caption(f"🔍 Hash: `{study_hash[:12]}`")
+        st.sidebar.caption(f"📊 weeks={solver_cfg.weeks} staff={custom_staffing}")
+        if all_studies:
+            for s in all_studies:
+                match = "✅" if s.study_hash == study_hash else "❌"
+                st.sidebar.caption(f"{match} `{s.study_hash[:12]}` ({s.total_trials})")
+
+        
         if manager.study_exists(study_hash):
+
             summary = manager.get_study_summary(study_hash)
             if summary and summary.total_trials > 0:
                 st.sidebar.info(f"📚 Étude existante: {summary.total_trials} essais | Score: {summary.best_score:.1f}")
@@ -165,39 +185,63 @@ def render_sidebar():
     # Advanced panel (Week)
     with st.sidebar.expander("🔧 Paramètres Avancés (Semaine)", expanded=False):
         st.subheader("Contraintes dures")
-        st.checkbox("Repos après nuit", value=True, key="cfg_forbid_night_to_day",
+        st.session_state.setdefault("cfg_forbid_night_to_day", True)
+        st.checkbox("Repos après nuit", key="cfg_forbid_night_to_day",
             help="Interdire de travailler le jour après une nuit")
-        st.checkbox("EDO activé", value=True, key="cfg_edo_enabled",
+            
+        st.session_state.setdefault("cfg_edo_enabled", True)
+        st.checkbox("EDO activé", key="cfg_edo_enabled",
             help="Activer les jours de repos (1 jour/2 semaines)")
-        st.number_input("Nuits consécutives max", min_value=1, max_value=5, value=3, key="cfg_max_nights_seq")
-        st.number_input("Jours consécutifs max", min_value=3, max_value=14, value=6, key="cfg_max_consecutive_days",
+            
+        st.session_state.setdefault("cfg_forbid_contractor_pairs", True)
+        st.checkbox("Pas 2 externes ensemble", key="cfg_forbid_contractor_pairs",
+            help="Interdire de mettre 2 externes/contractuels en binôme (pour tutorat)")
+
+        st.session_state.setdefault("cfg_max_nights_seq", 3)
+        st.number_input("Nuits consécutives max", min_value=1, max_value=5, key="cfg_max_nights_seq")
+        
+        st.session_state.setdefault("cfg_max_consecutive_days", 6)
+        st.number_input("Jours consécutifs max", min_value=3, max_value=14, key="cfg_max_consecutive_days",
             help="Maximum de jours travaillés sans interruption (sauf si week-end travaillé)")
         
         st.subheader("Effectifs Requis (Par Jour)")
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.number_input("Paires Jour", min_value=1, max_value=10, value=RULES.default_staffing["D"], key="cfg_req_pairs_D", help="Nb de paires (x2 personnes)")
+            st.session_state.setdefault("cfg_req_pairs_D", RULES.default_staffing["D"])
+            st.number_input("Paires Jour", min_value=1, max_value=10, key="cfg_req_pairs_D", help="Nb de paires (x2 personnes)")
         with c2:
-            st.number_input("Pers. Soir", min_value=1, max_value=5, value=RULES.default_staffing["S"], key="cfg_req_solos_S", help="Nb de personnes (Solo)")
+            st.session_state.setdefault("cfg_req_solos_S", RULES.default_staffing["S"])
+            st.number_input("Pers. Soir", min_value=1, max_value=5, key="cfg_req_solos_S", help="Nb de personnes (Solo)")
         with c3:
-            st.number_input("Paires Nuit", min_value=1, max_value=5, value=RULES.default_staffing["N"], key="cfg_req_pairs_N", help="Nb de paires (x2 personnes)")
+            st.session_state.setdefault("cfg_req_pairs_N", RULES.default_staffing["N"])
+            st.number_input("Paires Nuit", min_value=1, max_value=5, key="cfg_req_pairs_N", help="Nb de paires (x2 personnes)")
         
         st.subheader("Poids objectif (soft)")
         st.caption("Plus le poids est élevé, plus la contrainte est prioritaire")
-        st.slider("σ Nuits", min_value=0, max_value=20, value=10, key="cfg_weight_night_fairness")
-        st.slider("σ Soirs", min_value=0, max_value=20, value=3, key="cfg_weight_eve_fairness")
-        st.slider("Écart cible", min_value=0, max_value=20, value=5, key="cfg_weight_deviation")
-        st.slider("Soir→Jour", min_value=0, max_value=10, value=1, key="cfg_weight_clopening",
+        
+        st.session_state.setdefault("cfg_weight_night_fairness", 10)
+        st.slider("σ Nuits", min_value=0, max_value=20, key="cfg_weight_night_fairness")
+        
+        st.session_state.setdefault("cfg_weight_eve_fairness", 3)
+        st.slider("σ Soirs", min_value=0, max_value=20, key="cfg_weight_eve_fairness")
+        
+        st.session_state.setdefault("cfg_weight_deviation", 5)
+        st.slider("Écart cible", min_value=0, max_value=20, key="cfg_weight_deviation")
+        
+        st.session_state.setdefault("cfg_weight_clopening", 1)
+        st.slider("Soir→Jour", min_value=0, max_value=10, key="cfg_weight_clopening",
             help="Pénalité pour enchaînement soir suivi d'un jour")
         
         st.subheader("Équité")
+        st.session_state.setdefault("cfg_fairness_mode", ("by-wd", "Par jours/semaine"))
         st.selectbox("Mode cohorte", [("by-wd", "Par jours/semaine"), ("by-team", "Par équipe"), ("none", "Global")], 
             key="cfg_fairness_mode", format_func=lambda x: x[1] if isinstance(x, tuple) else x)
         
         st.divider()
         st.subheader("🧪 Tests")
+        st.session_state.setdefault("cfg_stress_test", False)
         st.checkbox(
-            "Mode Stress Test", value=False, key="cfg_stress_test",
+            "Mode Stress Test", key="cfg_stress_test",
             help="Active la demande impossible pour vérifier le logging des déficits"
         )
 
@@ -205,17 +249,27 @@ def render_sidebar():
     with st.sidebar.expander("🔧 Paramètres Avancés (Week-end)", expanded=False):
         st.caption("Samedi & Dimanche")
         
+        st.session_state.setdefault("cfg_max_weekends_month", 2)
         st.number_input(
-            "Max week-ends/mois", min_value=1, max_value=4, value=2, key="cfg_max_weekends_month",
-            help="Nombre maximum de week-ends travaillés par mois"
+            "Max WE/mois", min_value=0, max_value=4, key="cfg_max_weekends_month",
+            help="Maximum de week-ends travaillés par mois"
         )
+        
+        st.session_state.setdefault("cfg_forbid_consecutive_nights_we", True) 
         st.checkbox(
-            "Interdire 2 nuits de suite (WE)", value=True, key="cfg_forbid_consecutive_nights_we",
-            help="Si coché, empêche de faire Samedi Nuit ET Dimanche Nuit"
+            "Pas 2 nuits consécutives", key="cfg_forbid_consecutive_nights_we",
+            help="Interdire d'enchaîner Vendredi+Samedi ou Samedi+Dimanche Nuit"
         )
         
         st.subheader("Poids objectif")
-        st.slider("σ Fairness", min_value=0, max_value=20, value=10, key="cfg_weight_w_fairness", help="Équité charge globale")
-        st.slider("Pénalité Split", min_value=0, max_value=20, value=5, key="cfg_weight_w_split", help="Éviter de travailler Samedi ET Dimanche (sauf 24h)")
-        st.slider("Équité 24h", min_value=0, max_value=20, value=5, key="cfg_weight_w_24h", help="Répartir équitablement les shifts 24h")
-        st.slider("Pénalité 3 WE consécutifs", min_value=0, max_value=500, value=50, step=10, key="cfg_weight_w_consecutive", help="Pénalité forte pour travailler 3 week-ends de suite")
+        st.session_state.setdefault("cfg_weight_w_fairness", 10)
+        st.slider("σ Fairness", min_value=0, max_value=20, key="cfg_weight_w_fairness", help="Équité charge globale")
+        
+        st.session_state.setdefault("cfg_weight_w_split", 5)
+        st.slider("Pénalité Split", min_value=0, max_value=20, key="cfg_weight_w_split", help="Éviter de travailler Samedi ET Dimanche (sauf 24h)")
+        
+        st.session_state.setdefault("cfg_weight_w_24h", 5)
+        st.slider("Équité 24h", min_value=0, max_value=20, key="cfg_weight_w_24h", help="Répartir équitablement les shifts 24h")
+        
+        st.session_state.setdefault("cfg_weight_w_consecutive", 50)
+        st.slider("Pénalité 3 WE consécutifs", min_value=0, max_value=500, step=10, key="cfg_weight_w_consecutive", help="Pénalité forte pour travailler 3 week-ends de suite")
