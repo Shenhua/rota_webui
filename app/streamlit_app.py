@@ -190,8 +190,9 @@ def _handle_weekend_optimization(state: SessionStateManager):
         st.code(traceback.format_exc())
 
 def _render_weekend_only_dashboard(state: SessionStateManager):
-    """Render a standalone weekend dashboard (for separate mode)."""
+    """Render a standalone weekend dashboard (for separate mode) - mirrors weekday structure."""
     import pandas as pd
+    import plotly.express as px
     
     st.header("📅 Planning Week-end")
     
@@ -200,66 +201,160 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
         st.warning("Aucun résultat week-end disponible.")
         return
     
-    # KPIs
-    col1, col2, col3 = st.columns(3)
+    # === HERO KPIs ===
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Statut", "✅ Optimal" if w_result.status == "OPTIMAL" else "⚠️ Faisable")
     with col2:
-        score = getattr(w_result, 'score', 0)
-        st.metric("Score", f"{score:.1f}")
+        total_shifts = len(w_result.assignments)
+        st.metric("Affectations", f"{total_shifts}")
     with col3:
+        weeks = state.config_weeks or 12
+        required = weeks * 4 * 2  # 4 shifts per weekend × 2 staff
+        coverage_pct = (total_shifts / required * 100) if required > 0 else 0
+        st.metric("Couverture", f"{coverage_pct:.0f}%")
+    with col4:
         solve_time = getattr(w_result, 'solve_time', 0)
         st.metric("Temps", f"{solve_time:.1f}s")
     
     st.divider()
     
-    # Weekend assignments matrix - organized by person
-    st.subheader("🗓️ Affectations Samedi / Dimanche")
+    # === TABS (mirroring weekday structure) ===
+    t1, t2, t3, t4 = st.tabs(["📊 Planning", "📅 Couverture", "👥 Personnes", "📈 Analyses"])
     
-    if hasattr(w_result, 'assignments') and w_result.assignments:
-        # Group by person for better display
-        people = state.people or []
-        weeks = state.config_weeks or 12
+    # === TAB 1: PLANNING MATRIX ===
+    with t1:
+        st.subheader("🗓️ Affectations Samedi / Dimanche")
         
-        # Build person-centric matrix
-        person_map = {}
-        for a in w_result.assignments:
-            name = a.person.name if hasattr(a, 'person') and a.person else "?"
-            key = (name, a.week, a.day)
-            shift = {"D": "J", "S": "S", "N": "N"}.get(a.shift, a.shift)
-            person_map[key] = shift
-        
-        # Build matrix data
-        names = sorted(set(a.person.name for a in w_result.assignments if hasattr(a, 'person')))
-        matrix_data = []
-        
-        for name in names:
-            row = {"Nom": name}
-            for w in range(1, min(weeks + 1, 13)):  # Limit display
-                for d in ["Sam", "Dim"]:
-                    col = f"S{w}_{d}"
-                    val = person_map.get((name, w, d), "OFF")
-                    row[col] = val
-            matrix_data.append(row)
-        
-        if matrix_data:
-            df = pd.DataFrame(matrix_data)
-            df = df.set_index("Nom")
+        if hasattr(w_result, 'assignments') and w_result.assignments:
+            # Group by person for better display
+            weeks = state.config_weeks or 12
             
-            def color_shift(val):
-                colors = {
-                    "J": "background-color: #DDEEFF; color: #333; font-weight: bold;",
-                    "S": "background-color: #FFE4CC; color: #333; font-weight: bold;",
-                    "N": "background-color: #E6CCFF; color: #333; font-weight: bold;",
-                    "OFF": "background-color: #F8F8F8; color: #BBB;",
-                }
-                return colors.get(val, "")
+            # Build person-centric matrix
+            person_map = {}
+            for a in w_result.assignments:
+                name = a.person.name if hasattr(a, 'person') and a.person else "?"
+                key = (name, a.week, a.day)
+                shift = {"D": "J", "S": "S", "N": "N"}.get(a.shift, a.shift)
+                person_map[key] = shift
             
-            st.dataframe(df.style.map(color_shift), use_container_width=True, height=400)
+            # Build matrix data
+            names = sorted(set(a.person.name for a in w_result.assignments if hasattr(a, 'person')))
+            matrix_data = []
+            
+            for name in names:
+                row = {"Nom": name}
+                for w in range(1, min(weeks + 1, 13)):  # Limit display
+                    for d in ["Sam", "Dim"]:
+                        col = f"S{w}_{d}"
+                        val = person_map.get((name, w, d), "OFF")
+                        row[col] = val
+                matrix_data.append(row)
+            
+            if matrix_data:
+                df = pd.DataFrame(matrix_data)
+                df = df.set_index("Nom")
+                
+                def color_shift(val):
+                    colors = {
+                        "J": "background-color: #DDEEFF; color: #333; font-weight: bold;",
+                        "N": "background-color: #E6CCFF; color: #333; font-weight: bold;",
+                        "OFF": "background-color: #F8F8F8; color: #BBB;",
+                    }
+                    return colors.get(val, "")
+                
+                st.dataframe(df.style.map(color_shift), use_container_width=True, height=400)
+            else:
+                st.info("Aucune affectation week-end.")
         else:
-            st.info("Aucune affectation week-end.")
-    else:
-        st.info(f"Aucune affectation. Statut: {w_result.status}")
+            st.info(f"Aucune affectation. Statut: {w_result.status}")
+    
+    # === TAB 2: COUVERTURE ===
+    with t2:
+        st.subheader("📅 Calendrier de Couverture Week-end")
+        st.caption("🟢 Couvert | 🟡 Partiel | 🔴 Manque")
+        
+        weeks = state.config_weeks or 12
+        coverage_data = []
+        
+        for w in range(1, weeks + 1):
+            row = {"Semaine": f"S{w}"}
+            for we_day in ["Sam", "Dim"]:
+                day_assignments = [a for a in w_result.assignments if a.week == w and a.day == we_day]
+                filled = len(day_assignments)
+                required = 4  # 2 shifts × 2 staff per shift
+                
+                pct = (filled / required * 100) if required > 0 else 100
+                if pct >= 100:
+                    row[we_day] = "✅"
+                elif pct >= 50:
+                    row[we_day] = f"⚠️ {int(pct)}%"
+                else:
+                    row[we_day] = f"❌ {int(pct)}%"
+            coverage_data.append(row)
+        
+        df_cov = pd.DataFrame(coverage_data)
+        
+        def color_coverage(val):
+            if "✅" in str(val):
+                return "background-color: #D4EDDA; color: #155724;"
+            elif "⚠️" in str(val):
+                return "background-color: #FFF3CD; color: #856404;"
+            elif "❌" in str(val):
+                return "background-color: #F8D7DA; color: #721C24; font-weight: bold;"
+            return ""
+        
+        styled_cov = df_cov.style.map(color_coverage, subset=["Sam", "Dim"])
+        st.dataframe(styled_cov, use_container_width=True, hide_index=True)
+    
+    # === TAB 3: PERSONNES ===
+    with t3:
+        st.subheader("Statistiques par Personne (Week-end)")
+        
+        # Count shifts per person
+        person_counts = {}
+        for a in w_result.assignments:
+            name = a.person.name
+            person_counts[name] = person_counts.get(name, 0) + 1
+        
+        person_data = [{"Nom": name, "Shifts WE": count} for name, count in sorted(person_counts.items())]
+        
+        if person_data:
+            df_person = pd.DataFrame(person_data)
+            st.dataframe(df_person, use_container_width=True, hide_index=True)
+        else:
+            st.info("Aucune donnée de personne.")
+    
+    # === TAB 4: ANALYSES ===
+    with t4:
+        st.subheader("📈 Analyses Week-end")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Répartition par jour/shift**")
+            we_counts = {"Sam D": 0, "Sam N": 0, "Dim D": 0, "Dim N": 0}
+            for a in w_result.assignments:
+                key = f"{a.day} {a.shift}"
+                if key in we_counts:
+                    we_counts[key] += 1
+            
+            fig = px.pie(
+                values=list(we_counts.values()),
+                names=list(we_counts.keys()),
+                color_discrete_sequence=["#C8E6C9", "#A5D6A7", "#81C784", "#66BB6A"]
+            )
+            fig.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.write("**Top 10 shifts WE par personne**")
+            sorted_counts = sorted(person_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+            if sorted_counts:
+                df_top = pd.DataFrame(sorted_counts, columns=["Personne", "Shifts"])
+                fig_bar = px.bar(df_top, x="Personne", y="Shifts", color_discrete_sequence=["#4CAF50"])
+                fig_bar.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
+                st.plotly_chart(fig_bar, use_container_width=True)
 
 if __name__ == "__main__":
     main()

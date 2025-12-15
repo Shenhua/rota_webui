@@ -44,16 +44,16 @@ def render_dashboard(state: SessionStateManager, merged_mode: bool = False):
         _render_matrix(state, merged_mode=merged_mode)
 
     with t2:
-        _render_coverage(state)
+        _render_coverage(state, merged_mode=merged_mode)
 
     with t3:
-        _render_person_stats(state)
+        _render_person_stats(state, merged_mode=merged_mode)
 
     with t4:
-        _render_analytics(state)
+        _render_analytics(state, merged_mode=merged_mode)
 
     with t5:
-        _render_technical_details(state)
+        _render_technical_details(state, merged_mode=merged_mode)
 
     # === 4. FOOTER TECHNIQUE ===
     st.divider()
@@ -331,7 +331,7 @@ def _render_weekend_matrix(state):
 # ONGLET 2: COUVERTURE
 # =============================================================================
 
-def _render_coverage(state):
+def _render_coverage(state, merged_mode: bool = False):
     """Render the coverage calendar."""
     st.subheader("📅 Calendrier de Couverture")
     st.caption("🟢 Couvert | 🟡 Partiel | 🔴 Manque")
@@ -339,10 +339,16 @@ def _render_coverage(state):
     schedule = state.schedule
     weeks = state.config_weeks
     staffing = state.staffing
+    w_result = state.w_result if merged_mode else None
 
     if not staffing:
         st.warning("Données de staffing manquantes.")
         return
+
+    # Define columns based on mode
+    weekday_cols = JOURS  # Lun-Ven
+    weekend_cols = ["Sam", "Dim"] if merged_mode and w_result else []
+    all_cols = list(weekday_cols) + weekend_cols
 
     coverage_data = []
     for w in range(1, weeks + 1):
@@ -351,6 +357,7 @@ def _render_coverage(state):
         if not ws:
             continue
 
+        # Weekday coverage
         for d in JOURS:
             req_d = ws.slots[d].get("D", 0) * 2
             req_s = ws.slots[d].get("S", 0)
@@ -370,6 +377,23 @@ def _render_coverage(state):
                 row[d] = f"⚠️ {int(pct)}%"
             else:
                 row[d] = f"❌ {int(pct)}%"
+
+        # Weekend coverage (from w_result)
+        if merged_mode and w_result and w_result.assignments:
+            for we_day in ["Sam", "Dim"]:
+                # Count assignments for this day
+                day_assignments = [a for a in w_result.assignments if a.week == w and a.day == we_day]
+                filled = len(day_assignments)
+                required = 4  # 2 shifts × 2 staff per shift
+                
+                pct = (filled / required * 100) if required > 0 else 100
+                if pct >= 100:
+                    row[we_day] = "✅"
+                elif pct >= 50:
+                    row[we_day] = f"⚠️ {int(pct)}%"
+                else:
+                    row[we_day] = f"❌ {int(pct)}%"
+        
         coverage_data.append(row)
 
     df_coverage = pd.DataFrame(coverage_data)
@@ -383,8 +407,13 @@ def _render_coverage(state):
             return "background-color: #F8D7DA; color: #721C24; font-weight: bold;"
         return ""
 
-    styled_cov = df_coverage.style.map(color_coverage, subset=JOURS)
-    st.dataframe(styled_cov, use_container_width=True, hide_index=True)
+    # Only style columns that exist in the dataframe
+    cols_to_style = [c for c in all_cols if c in df_coverage.columns]
+    if cols_to_style:
+        styled_cov = df_coverage.style.map(color_coverage, subset=cols_to_style)
+        st.dataframe(styled_cov, use_container_width=True, hide_index=True)
+    else:
+        st.dataframe(df_coverage, use_container_width=True, hide_index=True)
 
     # Gap details
     validation = state.validation
@@ -401,7 +430,7 @@ def _render_coverage(state):
 # ONGLET 3: PERSONNES (Stats individuelles + Équité)
 # =============================================================================
 
-def _render_person_stats(state):
+def _render_person_stats(state, merged_mode: bool = False):
     """Render person-level statistics and fairness."""
     st.subheader("Statistiques par Personne")
 
@@ -415,6 +444,24 @@ def _render_person_stats(state):
     stats_data = stats_to_dict_list(person_stats)
 
     df_stats = pd.DataFrame(stats_data)
+    
+    # Add weekend stats if merged mode and we have weekend assignments
+    w_result = state.w_result if merged_mode else None
+    if merged_mode and w_result and w_result.assignments:
+        # Count weekend shifts per person
+        we_counts = {}
+        for a in w_result.assignments:
+            name = a.person.name
+            we_counts[name] = we_counts.get(name, 0) + 1
+        
+        # Add columns to stats dataframe
+        if "Nom" in df_stats.columns:
+            df_stats["WE Shifts"] = df_stats["Nom"].map(lambda n: we_counts.get(n, 0))
+            # Calculate total if we have a total column
+            if "Total" in df_stats.columns:
+                df_stats["Total+WE"] = df_stats["Total"] + df_stats["WE Shifts"]
+            else:
+                df_stats["Total+WE"] = df_stats["WE Shifts"]
 
     def color_delta(val):
         if val > 0:
@@ -451,17 +498,18 @@ def _render_person_stats(state):
 # ONGLET 4: ANALYSES (Graphiques)
 # =============================================================================
 
-def _render_analytics(state):
+def _render_analytics(state, merged_mode: bool = False):
     """Render analytics charts."""
     st.subheader("📈 Analytiques")
 
     schedule = state.schedule
     weeks = state.config_weeks
+    w_result = state.w_result if merged_mode else None
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.write("**Répartition des quarts**")
+        st.write("**Répartition des quarts (Semaine)**")
         shift_counts = {"Jour": 0, "Soir": 0, "Nuit": 0}
         for a in schedule.assignments:
             if a.shift == "D":
@@ -505,6 +553,45 @@ def _render_analytics(state):
         df_weekly = pd.DataFrame(weekly_data)
         st.line_chart(df_weekly.set_index("Semaine"))
 
+    # Weekend analytics (if merged mode)
+    if merged_mode and w_result and w_result.assignments:
+        st.divider()
+        st.write("**📅 Analyses Week-end**")
+        
+        we_col1, we_col2 = st.columns(2)
+        
+        with we_col1:
+            st.write("**Répartition WE par jour**")
+            we_day_counts = {"Sam D": 0, "Sam N": 0, "Dim D": 0, "Dim N": 0}
+            for a in w_result.assignments:
+                key = f"{a.day} {a.shift}"
+                if key in we_day_counts:
+                    we_day_counts[key] += 1
+            
+            fig_we_pie = px.pie(
+                values=list(we_day_counts.values()),
+                names=list(we_day_counts.keys()),
+                color_discrete_sequence=["#C8E6C9", "#A5D6A7", "#81C784", "#66BB6A"]
+            )
+            fig_we_pie.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
+            st.plotly_chart(fig_we_pie, use_container_width=True)
+        
+        with we_col2:
+            st.write("**WE Shifts par personne (Top 10)**")
+            we_person_counts = {}
+            for a in w_result.assignments:
+                name = a.person.name
+                we_person_counts[name] = we_person_counts.get(name, 0) + 1
+            
+            # Sort and take top 10
+            sorted_counts = sorted(we_person_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+            if sorted_counts:
+                df_we_person = pd.DataFrame(sorted_counts, columns=["Personne", "Shifts WE"])
+                fig_bar = px.bar(df_we_person, x="Personne", y="Shifts WE", 
+                                 color_discrete_sequence=["#4CAF50"])
+                fig_bar.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
+                st.plotly_chart(fig_bar, use_container_width=True)
+
     # Fairness chart
     st.divider()
     st.write("**Équité par cohorte (σ)**")
@@ -527,26 +614,27 @@ def _render_analytics(state):
 # ONGLET 5: DÉTAILS TECHNIQUES
 # =============================================================================
 
-def _render_technical_details(state):
+def _render_technical_details(state, merged_mode: bool = False):
     """Render technical details: Capacity, Quality, Pairs."""
     d1, d2, d3 = st.tabs(["📊 Capacité", "🔍 Qualité", "👥 Par Poste"])
 
     with d1:
-        _render_capacity_analysis(state)
+        _render_capacity_analysis(state, merged_mode=merged_mode)
 
     with d2:
-        _render_quality_metrics(state)
+        _render_quality_metrics(state, merged_mode=merged_mode)
 
     with d3:
-        _render_by_shift(state)
+        _render_by_shift(state, merged_mode=merged_mode)
 
 
-def _render_capacity_analysis(state):
+def _render_capacity_analysis(state, merged_mode: bool = False):
     """Render capacity analysis."""
     st.subheader("Analyse de Capacité")
 
     staffing = state.staffing
     edo_plan = state.edo_plan
+    w_result = state.w_result if merged_mode else None
 
     if not staffing or not edo_plan:
         st.warning("Données manquantes pour l'analyse de capacité.")
@@ -571,7 +659,7 @@ def _render_capacity_analysis(state):
     st.divider()
 
     # Per-shift breakdown
-    st.markdown("**Par type de quart:**")
+    st.markdown("**Par type de quart (Semaine):**")
     shift_data = []
     for shift, data in cap_analysis.by_shift.items():
         shift_name = {"D": "Jour 🌅", "S": "Soir 🌆", "N": "Nuit 🌙"}.get(shift, shift)
@@ -584,6 +672,31 @@ def _render_capacity_analysis(state):
             "Status": "✅" if gap <= 0 else f"❌ -{gap}"
         })
     st.dataframe(pd.DataFrame(shift_data), use_container_width=True, hide_index=True)
+    
+    # Weekend capacity (if merged mode)
+    if merged_mode and w_result and w_result.assignments:
+        st.divider()
+        st.markdown("**Par type de quart (Week-end):**")
+        we_shift_data = []
+        # Count weekend assignments by shift
+        we_counts = {"D": 0, "N": 0}
+        for a in w_result.assignments:
+            if a.shift in we_counts:
+                we_counts[a.shift] += 1
+        
+        weeks = state.config_weeks
+        required_per_shift = weeks * 2 * 2  # weeks × 2 days × 2 staff
+        for shift_code, shift_name in [("D", "Jour WE 🌅"), ("N", "Nuit WE 🌙")]:
+            assigned = we_counts.get(shift_code, 0)
+            gap = required_per_shift - assigned
+            we_shift_data.append({
+                "Quart": shift_name,
+                "Requis": required_per_shift,
+                "Affectés": assigned,
+                "Écart": gap,
+                "Status": "✅" if gap <= 0 else f"❌ -{gap}"
+            })
+        st.dataframe(pd.DataFrame(we_shift_data), use_container_width=True, hide_index=True)
 
     # Recommendation
     st.divider()
@@ -596,7 +709,7 @@ def _render_capacity_analysis(state):
         st.info(f"ℹ️ L'équipe est à **{cap_analysis.utilization_percent:.0f}%** de sa capacité. Marge confortable.")
 
 
-def _render_quality_metrics(state):
+def _render_quality_metrics(state, merged_mode: bool = False):
     """Render quality/violation metrics."""
     st.subheader("Métriques de Qualité")
 
@@ -648,18 +761,21 @@ def _render_quality_metrics(state):
                 st.metric(label, count)
 
 
-def _render_by_shift(state):
+def _render_by_shift(state, merged_mode: bool = False):
     """Render assignments by shift (pairs)."""
     st.subheader("Affectations par Poste (Paires)")
 
     schedule = state.schedule
     weeks = state.config_weeks
+    w_result = state.w_result if merged_mode else None
 
     for w in range(1, min(weeks + 1, 5)):
         st.write(f"**Semaine {w}**")
         pairs_data = []
+        
+        # Weekday assignments
         for d in JOURS:
-            row = {"Jour": d}
+            row = {"Date": f"S{w}_{d}"}
             for shift_name, shift_code in [("Jour", "D"), ("Soir", "S"), ("Nuit", "N"), ("Admin", "A")]:
                 pairs = [a for a in schedule.assignments
                          if a.week == w and a.day == d and a.shift == shift_code]
@@ -676,4 +792,18 @@ def _render_by_shift(state):
                             display_list.append(p_str)
                     row[shift_name] = "; ".join(display_list)
             pairs_data.append(row)
+        
+        # Weekend assignments (if merged mode)
+        if merged_mode and w_result and w_result.assignments:
+            for we_day in ["Sam", "Dim"]:
+                row = {"Date": f"S{w}_{we_day}"}
+                for shift_name, shift_code in [("Jour", "D"), ("Nuit", "N")]:
+                    we_assignments = [a for a in w_result.assignments
+                                      if a.week == w and a.day == we_day and a.shift == shift_code]
+                    names = [a.person.name for a in we_assignments]
+                    row[shift_name] = ", ".join(names) if names else "-"
+                row["Soir"] = "-"  # No evening shift on weekends
+                row["Admin"] = "-"  # No admin on weekends
+                pairs_data.append(row)
+        
         st.dataframe(pd.DataFrame(pairs_data), use_container_width=True, hide_index=True)
