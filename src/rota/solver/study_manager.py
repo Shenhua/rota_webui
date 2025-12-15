@@ -223,6 +223,29 @@ class StudyManager:
                 return json.loads(row[0])
             return None
     
+    def get_study_team(self, study_hash: str) -> Optional[List]:
+        """Get the team (people) stored with a study."""
+        from rota.models.person import Person
+        
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT team_json FROM studies WHERE study_hash = ?",
+                (study_hash,)
+            ).fetchone()
+            
+            if row and row[0]:
+                team_data = json.loads(row[0])
+                # Convert dicts back to Person objects
+                people = []
+                for p_dict in team_data:
+                    try:
+                        person = Person.from_dict(p_dict)
+                        people.append(person)
+                    except Exception as e:
+                        logger.warning(f"Failed to load person: {e}")
+                return people if people else None
+            return None
+    
     def list_studies(self, limit: int = 20) -> List[StudySummary]:
         """List all studies, most recent first."""
         with sqlite3.connect(self.db_path) as conn:

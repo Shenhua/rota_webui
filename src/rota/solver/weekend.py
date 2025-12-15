@@ -1,10 +1,13 @@
 """Weekend solver module using CP-SAT."""
+import logging
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
 from ortools.sat.python import cp_model
 
 from rota.models.person import Person
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -81,6 +84,8 @@ class WeekendSolver:
 
     def solve(self) -> WeekendResult:
         """Run the solver."""
+        logger.info(f"WeekendSolver: {len(self.people)} eligible people out of {len(self.all_people)} total")
+        
         if not self.people:
             return WeekendResult([], "INFEASIBLE", 0.0, "Aucun personnel éligible week-end.")
 
@@ -101,38 +106,46 @@ class WeekendSolver:
         if status_str in ("OPTIMAL", "FEASIBLE"):
             assignments = self._extract_solution(solver)
             
+        logger.info(f"WeekendSolver: status={status_str}, assignments={len(assignments)}")
+            
         return WeekendResult(
             assignments=assignments,
             status=status_str,
             solve_time=solver.WallTime(),
-            message=f"Résolu avec statut {status_str}"
+            message=f"{len(assignments)} affectations pour {len(self.people)} personnes éligibles"
         )
 
     def _create_variables(self):
-        """Create decision variables."""
+        """Create decision variables.
+        
+        IMPORTANT: Uses p.name as key since p.id may not be unique (all 0).
+        """
         for p in self.people:
             for w in range(1, self.config.num_weeks + 1):
                 for d in self.days:
                     for s in self.shifts:
-                        self.vars[(p.id, w, d, s)] = self.model.NewBoolVar(
-                            f"work_p{p.id}_w{w}_{d}_{s}"
+                        # Use p.name as unique key since p.id may all be 0
+                        self.vars[(p.name, w, d, s)] = self.model.NewBoolVar(
+                            f"work_{p.name}_w{w}_{d}_{s}"
                         )
 
     def _add_coverage_constraints(self):
-        """Ensure staffing requirements are met (soft constraint)."""
+        """Ensure staffing requirements are met (SOFT constraint only)."""
         # 2 per shift per day
         target = self.config.staff_per_shift
         self.total_deficits = []
+        
+        logger.debug(f"WeekendSolver coverage: num_weeks={self.config.num_weeks}, target={target}, people={len(self.people)}")
         
         for w in range(1, self.config.num_weeks + 1):
             for d in self.days:
                 for s in self.shifts:
                     staff_vars = [
-                        self.vars[(p.id, w, d, s)] 
+                        self.vars[(p.name, w, d, s)] 
                         for p in self.people
                     ]
                     
-                    # Deficit variable: 0 if met, N if missing N people
+                    # SOFT constraint only: penalty for missing staff
                     deficit = self.model.NewIntVar(0, target, f"deficit_w{w}_{d}_{s}")
                     self.model.Add(sum(staff_vars) + deficit == target)
                     self.total_deficits.append(deficit)
@@ -153,49 +166,51 @@ class WeekendSolver:
             
             for w in range(1, self.config.num_weeks + 1):
                 # Defines if person works at all this weekend
-                is_working_weekend = self.model.NewBoolVar(f"working_weekend_p{p.id}_w{w}")
+                is_working_weekend = self.model.NewBoolVar(f"working_weekend_{p.name}_w{w}")
                 weekend_shifts = [
-                    self.vars[(p.id, w, d, s)] 
+                    self.vars[(p.name, w, d, s)] 
                     for d in self.days for s in self.shifts
                 ]
                 
-                # Link is_working_weekend
-                self.model.Add(sum(weekend_shifts) > 0).OnlyEnforceIf(is_working_weekend)
-                self.model.Add(sum(weekend_shifts) == 0).OnlyEnforceIf(is_working_weekend.Not())
+                # Link is_working_weekend: if any shift is True, flag is True
+                for shift_var in weekend_shifts:
+                    self.model.AddImplication(shift_var, is_working_weekend)
+                
                 weekend_worked_vars.append(is_working_weekend)
 
-                # Max 24h per weekend (2 shifts max)
+                # Max 2 shifts per weekend (24h max)
                 self.model.Add(sum(weekend_shifts) <= 2)
                 
-                # Repos après nuit logic within weekend:
-                # If working Sam Night, cannot work Dim Day.
-                sat_n = self.vars[(p.id, w, "Sam", "N")]
-                sun_d = self.vars[(p.id, w, "Dim", "D")]
+                # Repos après nuit: If working Sam Night, cannot work Dim Day
+                sat_n = self.vars[(p.name, w, "Sam", "N")]
+                sun_d = self.vars[(p.name, w, "Dim", "D")]
                 self.model.Add(sat_n + sun_d <= 1)
 
             # Max weekends over horizon
             if max_weekends_total > 0:
-                 self.model.Add(sum(weekend_worked_vars) <= max_weekends_total)
+                self.model.Add(sum(weekend_worked_vars) <= max_weekends_total)
             
-            # Spreading: Penalize consecutive weekends
+            # Consecutive weekend penalty (soft constraint via objective)
             for i in range(len(weekend_worked_vars) - 1):
-                consecutive = self.model.NewBoolVar(f"consecutive_we_p{p.id}_w{i}")
+                consecutive = self.model.NewBoolVar(f"consecutive_we_{p.name}_w{i}")
                 self.model.AddBoolAnd([weekend_worked_vars[i], weekend_worked_vars[i+1]]).OnlyEnforceIf(consecutive)
                 self.model.AddBoolOr([weekend_worked_vars[i].Not(), weekend_worked_vars[i+1].Not()]).OnlyEnforceIf(consecutive.Not())
-                # Store penalty to minimize later
                 self.consecutive_penalties.append(consecutive * self.config.weight_consecutive_weekends)
 
     def _add_fairness_objective(self):
         """Minimize deviation and penalties with proportional fairness."""
         penalties = []
         
-        # Add collected penalties from workload constraints
+        # Add collected penalties from workload constraints (consecutive weekends)
         if self.consecutive_penalties:
             penalties.extend(self.consecutive_penalties)
         
         # Calculate total workdays capacity for proportional fairness
         total_workdays = sum(p.workdays_per_week for p in self.people)
-        total_shifts_needed = self.config.num_weeks * 2 * 2 * self.config.staff_per_shift # Correct total needed
+        total_shifts_needed = self.config.num_weeks * 2 * 2 * self.config.staff_per_shift
+        
+        if total_workdays == 0:
+            total_workdays = len(self.people) * 5  # Default to 5 days/week
         
         # Track shifts per person for proportional target
         total_shifts_per_person = []
@@ -204,68 +219,21 @@ class WeekendSolver:
             # Proportional target based on workdays
             target = int(round((p.workdays_per_week / total_workdays) * total_shifts_needed))
             
-            total_shifts = self.model.NewIntVar(0, self.config.num_weeks * 4, f"total_shifts_p{p.id}")
+            total_shifts = self.model.NewIntVar(0, self.config.num_weeks * 4, f"total_shifts_{p.name}")
             all_p_shifts = [
-                self.vars[(p.id, w, d, s)]
+                self.vars[(p.name, w, d, s)]
                 for w in range(1, self.config.num_weeks + 1)
                 for d in self.days
                 for s in self.shifts
             ]
             self.model.Add(total_shifts == sum(all_p_shifts))
-            total_shifts_per_person.append((total_shifts, target, p.id))
+            total_shifts_per_person.append((total_shifts, target, p.name))
             
             # Add deviation from target to penalties
-            deviation = self.model.NewIntVar(0, self.config.num_weeks * 4, f"dev_p{p.id}")
+            deviation = self.model.NewIntVar(0, self.config.num_weeks * 4, f"dev_{p.name}")
             self.model.Add(deviation >= total_shifts - target)
             self.model.Add(deviation >= target - total_shifts)
             penalties.append(deviation * self.config.weight_fairness)
-        
-        # Split weekend penalty (working both Sam and Dim)
-        for p in self.people:
-            for w in range(1, self.config.num_weeks + 1):
-                works_sat = self.model.NewBoolVar(f"works_sat_p{p.id}_w{w}")
-                works_sun = self.model.NewBoolVar(f"works_sun_p{p.id}_w{w}")
-                
-                sat_shifts = [self.vars[(p.id, w, "Sam", s)] for s in self.shifts]
-                sun_shifts = [self.vars[(p.id, w, "Dim", s)] for s in self.shifts]
-                
-                self.model.Add(sum(sat_shifts) > 0).OnlyEnforceIf(works_sat)
-                self.model.Add(sum(sat_shifts) == 0).OnlyEnforceIf(works_sat.Not())
-                
-                self.model.Add(sum(sun_shifts) > 0).OnlyEnforceIf(works_sun)
-                self.model.Add(sum(sun_shifts) == 0).OnlyEnforceIf(works_sun.Not())
-                
-                # Penalty if both true
-                both_days = self.model.NewBoolVar(f"both_days_p{p.id}_w{w}")
-                self.model.AddBoolAnd([works_sat, works_sun]).OnlyEnforceIf(both_days)
-                self.model.AddBoolOr([works_sat.Not(), works_sun.Not()]).OnlyEnforceIf(both_days.Not())
-                
-                penalties.append(both_days * self.config.weight_split_weekend)
-        
-        # 24h balance: Track 24h shifts and balance proportionally
-        for p in self.people:
-            shifts_24h = []
-            for w in range(1, self.config.num_weeks + 1):
-                is_24h = self.model.NewBoolVar(f"is_24h_p{p.id}_w{w}")
-                weekend_shifts = [
-                    self.vars[(p.id, w, d, s)] 
-                    for d in self.days for s in self.shifts
-                ]
-                # 24h = exactly 2 shifts in one weekend
-                self.model.Add(sum(weekend_shifts) == 2).OnlyEnforceIf(is_24h)
-                self.model.Add(sum(weekend_shifts) != 2).OnlyEnforceIf(is_24h.Not())
-                shifts_24h.append(is_24h)
-            
-            # Proportional 24h target
-            total_workdays = max(1, sum(p.workdays_per_week for p in self.people))
-            target_24h = max(1, int(round((p.workdays_per_week / total_workdays) * self.config.num_weeks)))
-            total_24h = self.model.NewIntVar(0, self.config.num_weeks, f"total_24h_p{p.id}")
-            self.model.Add(total_24h == sum(shifts_24h))
-            
-            dev_24h = self.model.NewIntVar(0, self.config.num_weeks, f"dev_24h_p{p.id}")
-            self.model.Add(dev_24h >= total_24h - target_24h)
-            self.model.Add(dev_24h >= target_24h - total_24h)
-            penalties.append(dev_24h * self.config.weight_24h_balance)
 
         # Minimize global range (max - min shifts)
         if total_shifts_per_person:
@@ -277,7 +245,7 @@ class WeekendSolver:
             penalties.append((max_s - min_s) * self.config.weight_fairness)
 
         # Minimize deficits (Highest priority)
-        if hasattr(self, 'total_deficits'):
+        if hasattr(self, 'total_deficits') and self.total_deficits:
             weight_deficit = 100000  # Very high cost for missing a slot
             penalties.append(sum(self.total_deficits) * weight_deficit)
 
@@ -290,7 +258,7 @@ class WeekendSolver:
             for w in range(1, self.config.num_weeks + 1):
                 for d in self.days:
                     for s in self.shifts:
-                        if solver.BooleanValue(self.vars[(p.id, w, d, s)]):
+                        if solver.BooleanValue(self.vars[(p.name, w, d, s)]):
                             assignments.append(WeekendAssignment(
                                 person=p,
                                 week=w,
@@ -308,15 +276,15 @@ class WeekendSolver:
                 p = next((p for p in self.people if p.name == name), None)
                 if p:
                     # Forbid Sat Day
-                    if (p.id, w, "Sam", "D") in self.vars:
-                         self.model.Add(self.vars[(p.id, w, "Sam", "D")] == 0)
+                    if (p.name, w, "Sam", "D") in self.vars:
+                         self.model.Add(self.vars[(p.name, w, "Sam", "D")] == 0)
         
         # 2. No consecutive nights (Sat N + Sun N)
         if self.config.forbid_consecutive_nights:
             for p in self.people:
                 for w in range(1, self.config.num_weeks + 1):
-                    sat_n = self.vars.get((p.id, w, "Sam", "N"))
-                    sun_n = self.vars.get((p.id, w, "Dim", "N"))
+                    sat_n = self.vars.get((p.name, w, "Sam", "N"))
+                    sun_n = self.vars.get((p.name, w, "Dim", "N"))
                     if sat_n is not None and sun_n is not None:
                         # Cannot work both nights
                         self.model.Add(sat_n + sun_n <= 1)

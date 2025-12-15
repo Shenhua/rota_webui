@@ -192,12 +192,21 @@ def load_study_result(study_hash: str, people: Optional[list] = None, config = N
     # Get from session state if not provided
     if people is None:
         people = st.session_state.get("people", [])
+    
+    # If still no people, try to load from the study's stored team
+    if not people:
+        stored_team = manager.get_study_team(study_hash)
+        if stored_team:
+            people = stored_team
+            st.session_state["people"] = people
+            st.info(f"✅ Équipe restaurée depuis l'étude ({len(people)} personnes)")
+    
     if config is None:
         from app.components.utils import get_solver_config
         config = get_solver_config()
     
     if not people:
-        st.warning("Données de validation manquantes - équipe introuvable.")
+        st.warning("Données de validation manquantes - équipe introuvable dans l'étude.")
         # Still load schedule
         st.session_state.schedule = schedule
         st.session_state.best_seed = trial.seed
