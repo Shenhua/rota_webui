@@ -802,12 +802,40 @@ def export_merged_calendar(
             if worked_this_we:
                 count_we += 1
         
-        # Write Totals
-        for i, val in enumerate([count_j, count_n, count_s, count_we]):
-            c = ws_mgr.cell(row=row_idx, column=current_col + i, value=val)
-            c.alignment = align_center
-            c.font = font_bold
-            c.border = border_grey
+        # Write Totals with Formulas
+        end_col_char = get_column_letter(current_col - 1)
+        r = row_idx
+        range_str = f"B{r}:{end_col_char}{r}"
+        
+        # Total J
+        c = ws_mgr.cell(row=r, column=current_col, value=f'=COUNTIF({range_str}, "*D*")')
+        c.alignment = align_center
+        c.font = font_bold
+        c.border = border_grey
+        
+        # Total N
+        c = ws_mgr.cell(row=r, column=current_col + 1, value=f'=COUNTIF({range_str}, "*N*")')
+        c.alignment = align_center
+        c.font = font_bold
+        c.border = border_grey
+        
+        # Total S
+        c = ws_mgr.cell(row=r, column=current_col + 2, value=f'=COUNTIF({range_str}, "*S*")')
+        c.alignment = align_center
+        c.font = font_bold
+        c.border = border_grey
+        
+        # Total WE (Shifts on Sat/Sun)
+        # Usage of SUMPRODUCT to count shifts in columns corresponding to Sam/Dim (indices 5, 6 mod 7)
+        # Checks for D, N, S in those columns
+        we_formula = (
+            f'=SUMPRODUCT((MOD(COLUMN({range_str})-2,7)>=5)*'
+            f'(ISNUMBER(SEARCH("D",{range_str}))+ISNUMBER(SEARCH("N",{range_str}))+ISNUMBER(SEARCH("S",{range_str}))))'
+        )
+        c = ws_mgr.cell(row=r, column=current_col + 3, value=we_formula)
+        c.alignment = align_center
+        c.font = font_bold
+        c.border = border_grey
 
         row_idx += 1
 
@@ -850,7 +878,9 @@ def export_merged_calendar(
     # Headers - include weekend if available
     has_weekend = weekend_result and weekend_result.assignments
     if has_weekend:
-        headers = ["Nom", "Jours", "Soirs", "Nuits", "Admin", "WE Shifts", "Total", "Cible", "Écart", "Nb_EDO"]
+        # Match Web Dashboard structure:
+        # Jours, Soirs, Nuits, Admin, Total (Sem), Cible, Écart, Nb_EDO, WE Shifts, Total+WE
+        headers = ["Nom", "Jours", "Soirs", "Nuits", "Admin", "Total (Sem)", "Cible", "Écart", "Nb_EDO", "WE Shifts", "Total+WE"]
     else:
         headers = ["Nom", "Jours", "Soirs", "Nuits", "Admin", "Total", "Cible", "Écart", "Nb_EDO"]
     
@@ -870,28 +900,42 @@ def export_merged_calendar(
         if p.workdays_per_week == 0:
             continue
         
-        # Count weekday shifts
+        # Count weekday shifts only (exclude weekend days)
         jours = sum(1 for k, v in full_map.items() if k[0] == p.name and "D" in v and k[2] not in days_weekend)
-        soirs = sum(1 for k, v in full_map.items() if k[0] == p.name and v == "S")
-        nuits = sum(1 for k, v in full_map.items() if k[0] == p.name and "N" in v)
+        soirs = sum(1 for k, v in full_map.items() if k[0] == p.name and "S" in v and k[2] not in days_weekend)
+        nuits = sum(1 for k, v in full_map.items() if k[0] == p.name and "N" in v and k[2] not in days_weekend)
         admin = 0  # Not currently tracked
         we_shifts = we_counts.get(p.name, 0)
         
-        total = jours + soirs + nuits + admin
+        # Total (Semaine) - used for target comparison
+        total_sem = jours + soirs + nuits + admin
+        
+        # Total including WE - for global view
+        total_we = total_sem + we_shifts if has_weekend else total_sem
+
         edo_weeks = sum(1 for w in range(1, weeks + 1) if p.name in edo_plan.plan.get(w, set()))
         cible = p.workdays_per_week * weeks - edo_weeks
-        ecart = total - cible
+        
+        # Écart matches Weekday Target compliance (as requested)
+        ecart = total_sem - cible
         
         if has_weekend:
-            row = [p.name, jours, soirs, nuits, admin, we_shifts, total, cible, ecart, edo_weeks]
+            # Structure: Weekday details -> Weekday Stats -> Weekend details -> Combined Total
+            row = [p.name, jours, soirs, nuits, admin, total_sem, cible, ecart, edo_weeks, we_shifts, total_we]
         else:
-            row = [p.name, jours, soirs, nuits, admin, total, cible, ecart, edo_weeks]
+            row = [p.name, jours, soirs, nuits, admin, total_sem, cible, ecart, edo_weeks]
         
         ws_syn.append(row)
         
         # Color-code écart: red for negative, green for positive
+        # Color-code écart: red for negative, green for positive
         last_row = ws_syn.max_row
-        ecart_col = 9 if has_weekend else 8
+        ecart_col = 8 if has_weekend else 8 # Column H is index 8 in both cases now? 
+        # Wait: 
+        # Weekday: Nom(1), J(2), S(3), N(4), A(5), Tot(6), Cible(7), Ecart(8), EDO(9) -> Ecart is 8
+        # Weekend: Nom(1), J(2), S(3), N(4), A(5), TotSem(6), Cible(7), Ecart(8), EDO(9), WE(10), TotWE(11) -> Ecart is 8
+        # So Ecart is always column 8 ("H")
+        ecart_col = 8
         if ecart < 0:
             ws_syn.cell(row=last_row, column=ecart_col).font = Font(color="FF0000", bold=True)
         elif ecart > 0:
@@ -902,16 +946,18 @@ def export_merged_calendar(
     ws_syn.cell(row=summary_row, column=1, value="TOTAL").font = Font(bold=True)
     
     # Sum each numeric column
+    # Sum each numeric column
     if has_weekend:
-        for col_idx in range(2, 11):  # Columns B through J
-            if col_idx <= 6:  # Numeric columns (Jours, Soirs, Nuits, Admin, WE, Total)
-                col_letter = get_column_letter(col_idx)
-                ws_syn.cell(row=summary_row, column=col_idx, 
-                           value=f"=SUM({col_letter}2:{col_letter}{summary_row-1})")
+        for col_idx in range(2, 12):  # Columns B through K (11 cols)
+            # Numeric columns: J(2), S(3), N(4), A(5), TotSem(6), Cible(7), Ecart(8), EDO(9), WE(10), TotWE(11)
+            # All are numeric except names
+            col_letter = get_column_letter(col_idx)
+            ws_syn.cell(row=summary_row, column=col_idx, 
+                       value=f"=SUM({col_letter}2:{col_letter}{summary_row-1})")
             ws_syn.cell(row=summary_row, column=col_idx).font = Font(bold=True)
     else:
         for col_idx in range(2, 10):  # Columns B through I
-            if col_idx <= 5:  # Numeric columns
+            if col_idx <= 8:  # All numeric from 2 to 9 (EDO)
                 col_letter = get_column_letter(col_idx)
                 ws_syn.cell(row=summary_row, column=col_idx, 
                            value=f"=SUM({col_letter}2:{col_letter}{summary_row-1})")
@@ -919,7 +965,9 @@ def export_merged_calendar(
     
     # Style summary row
     fill_summary = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
-    for col_idx in range(1, (11 if has_weekend else 10)):
+    # Style summary row
+    fill_summary = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
+    for col_idx in range(1, (12 if has_weekend else 10)):
         ws_syn.cell(row=summary_row, column=col_idx).fill = fill_summary
     
     # Column widths

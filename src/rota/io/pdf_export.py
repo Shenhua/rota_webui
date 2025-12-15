@@ -216,9 +216,15 @@ def export_schedule_to_pdf(
     pdf.set_fill_color(*COLORS["header_bg"])
     pdf.set_text_color(*COLORS["header_text"])
     
-    cols = ["Nom", "Jours", "Soirs", "Nuits", "Total", "Cible", "Écart", "EDO"]
-    widths = [40, 15, 15, 15, 15, 15, 15, 15]
-    
+    has_weekend = weekend_result and weekend_result.assignments
+    if has_weekend:
+        # Weekday stats -> Target/Gap -> Weekend stats -> Final Total
+        cols = ["Nom", "Jours", "Soirs", "Nuits", "Total", "Cible", "Écart", "EDO", "WE Shifts", "Total+WE"]
+        widths = [40, 15, 15, 15, 15, 15, 15, 15, 20, 20]
+    else:
+        cols = ["Nom", "Jours", "Soirs", "Nuits", "Total", "Cible", "Écart", "EDO"]
+        widths = [40, 15, 15, 15, 15, 15, 15, 15]
+
     for col, w in zip(cols, widths):
         pdf.cell(w, 6, col, border=1, align="C", fill=True)
     pdf.ln()
@@ -229,22 +235,51 @@ def export_schedule_to_pdf(
     # Use centralized stats calculation
     person_stats = calculate_person_stats(schedule, people, edo_plan)
     
+    # Count WE shifts if needed
+    we_counts = {}
+    if has_weekend:
+        for a in weekend_result.assignments:
+            we_counts[a.person.name] = we_counts.get(a.person.name, 0) + 1
+    
     # Data rows
     for ps in sorted(person_stats, key=lambda x: x.name):
         if ps.workdays_per_week == 0:
             continue
         
+        # Calculate Stats matching Web Dashboard logic
+        # ps.total is Weekday Total (calculated by calculate_person_stats using schedule only)
+        # ps.target is derived from contract (weeks * days_per_week)
+        
+        we_shifts = we_counts.get(ps.name, 0)
+        total_sem = ps.total
+        total_we = total_sem + we_shifts if has_weekend else total_sem
+        
+        # Gap should be Weekday Total vs Target (to avoid rewarding weekend work against weekday deficit)
+        ecart = total_sem - ps.target
+        
         # Color for écart
         ecart_color = (0, 0, 0)  # Default black
-        if ps.delta < 0:
+        if ecart < 0:
             ecart_color = (220, 0, 0)  # Red
-        elif ps.delta > 0:
+        elif ecart > 0:
             ecart_color = (0, 150, 0)  # Green
         
-        row_data = [ps.name[:20], str(ps.jours), str(ps.soirs), str(ps.nuits), str(ps.total), str(ps.target), str(ps.delta), str(ps.edo_weeks)]
+        if has_weekend:
+            # Nom, J, S, N, Total(Sem), Cible, Ecart, EDO, WE, Total+WE
+            row_data = [
+                ps.name[:20], 
+                str(ps.jours), str(ps.soirs), str(ps.nuits), 
+                str(total_sem), str(ps.target), str(ecart), str(ps.edo_weeks),
+                str(we_shifts), str(total_we)
+            ]
+            ecart_idx = 6 # Index of "Écart" column
+        else:
+            row_data = [ps.name[:20], str(ps.jours), str(ps.soirs), str(ps.nuits), str(total_sem), str(ps.target), str(ecart), str(ps.edo_weeks)]
+            ecart_idx = 6
+
         for i, (val, w) in enumerate(zip(row_data, widths)):
-            # Only apply ecart color to the Écart column (index 6)
-            if i == 6:
+            # Only apply ecart color to the Écart column
+            if i == ecart_idx:
                 pdf.set_text_color(*ecart_color)
             else:
                 pdf.set_text_color(0, 0, 0)
