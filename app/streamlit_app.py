@@ -255,6 +255,15 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
                 df = pd.DataFrame(matrix_data)
                 df = df.set_index("Nom")
                 
+                # Create merged cell headers using MultiIndex
+                new_cols = []
+                for w in range(1, min(weeks + 1, 13)):
+                    for d in ["Sam", "Dim"]:
+                         new_cols.append((f"Semaine {w}", d))
+                
+                if len(df.columns) == len(new_cols):
+                    df.columns = pd.MultiIndex.from_tuples(new_cols)
+                
                 def color_shift(val):
                     colors = {
                         "J": "background-color: #DDEEFF; color: #333; font-weight: bold;",

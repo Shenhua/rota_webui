@@ -220,6 +220,16 @@ def _render_full_week_matrix(state):
 
     df = pd.DataFrame(matrix_data)
     df = df.drop_duplicates(subset=["Nom"]).set_index("Nom")
+    
+    # Create merged cell headers using MultiIndex
+    # Structure: ("Semaine 1", "Lun"), ("Semaine 1", "Mar"), ...
+    new_cols = []
+    for w in range(1, weeks + 1):
+        for d in JOURS_FULL:
+             new_cols.append((f"Semaine {w}", d))
+    
+    if len(df.columns) == len(new_cols):
+        df.columns = pd.MultiIndex.from_tuples(new_cols)
 
     # Color function
     def color_shift(val):
@@ -269,6 +279,15 @@ def _render_weekday_matrix(state):
 
     df = pd.DataFrame(matrix_data)
     df = df.drop_duplicates(subset=["Nom"]).set_index("Nom")
+    
+    # Create merged cell headers using MultiIndex
+    new_cols = []
+    for w in range(1, weeks + 1):
+        for d in JOURS:
+             new_cols.append((f"Semaine {w}", d))
+    
+    if len(df.columns) == len(new_cols):
+        df.columns = pd.MultiIndex.from_tuples(new_cols)
 
     # Color function
     def color_shift(val):
