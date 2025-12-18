@@ -147,19 +147,3 @@ def calculate_capacity(
         utilization_percent=utilization,
     )
 
-
-def capacity_to_dict(analysis: CapacityAnalysis) -> Dict:
-    """Convert analysis to dict for export."""
-    return {
-        "total_available_person_days": analysis.total_available_person_days,
-        "total_edo_days": analysis.total_edo_days,
-        "net_capacity": analysis.net_capacity,
-        "total_required_person_shifts": analysis.total_required_person_shifts,
-        "total_assigned_person_shifts": analysis.total_assigned_person_shifts,
-        "unfilled_person_shifts": analysis.unfilled_person_shifts,
-        "capacity_balance": analysis.capacity_balance,
-        "by_shift": analysis.by_shift,
-        "agents_needed": round(analysis.agents_needed, 1),
-        "excess_agent_days": round(analysis.excess_agent_days, 1),
-        "utilization_percent": round(analysis.utilization_percent, 1),
-    }

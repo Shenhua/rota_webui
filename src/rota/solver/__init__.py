@@ -8,10 +8,6 @@ from .stats import (
     PersonStats, 
     calculate_person_stats, 
     stats_to_dict_list,
-    CoverageStats,
-    calculate_coverage,
-    get_total_gaps,
-    get_coverage_percentage,
 )
 from .validation import (
     FairnessMetrics,
@@ -22,7 +18,6 @@ from .validation import (
 )
 
 __all__ = [
-    "solve_pairs",
     "solve_pairs",
     "PairSchedule", 
     "PairAssignment",
@@ -39,8 +34,5 @@ __all__ = [
     "PersonStats",
     "calculate_person_stats",
     "stats_to_dict_list",
-    "CoverageStats",
-    "calculate_coverage",
-    "get_total_gaps",
-    "get_coverage_percentage",
 ]
+
