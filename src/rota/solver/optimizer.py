@@ -116,12 +116,14 @@ def optimize(
                 futures[future] = cur_seed
                 
             # Process results as they complete
+            # Timeout per future = 2x the solver time limit (or 120s minimum)
+            future_timeout = max(120, config.time_limit_seconds * 2)
             completed_count = 0
             for future in concurrent.futures.as_completed(futures):
                 completed_count += 1
                 cur_seed = futures[future]
                 try:
-                    schedule, score = future.result()
+                    schedule, score = future.result(timeout=future_timeout)
                     slog.step(f"▸ Try {completed_count}/{tries} (seed={cur_seed}) finished. Score: {score:.2f}")
                     
                     if score < best_score:
@@ -130,8 +132,11 @@ def optimize(
                         best_schedule = schedule
                         best_seed = cur_seed
                         
+                except concurrent.futures.TimeoutError:
+                    logger.error(f"Try timed out for seed {cur_seed} (>{future_timeout}s)")
                 except Exception as e:
                     logger.error(f"Try failed for seed {cur_seed}: {e}")
+                    
                     
         # Return best found
         if best_schedule:

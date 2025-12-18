@@ -260,13 +260,24 @@ def solve_pairs(
                 model.Add(sum(window_nights) <= config.max_nights_sequence)
     
     # 6. EDO: Person doesn't work on EDO day
+    #    - If person has a fixed EDO day: force that day off
+    #    - If no fixed day: solver must pick exactly one day off (let it optimize)
     slog.step("Constraint: EDO days")
     for p in names:
         for w in range(1, weeks + 1):
             if p in edo_plan.plan.get(w, set()):
                 fixed = edo_plan.fixed.get(p, "")
                 if fixed and fixed in days:
+                    # Person has a fixed EDO day preference - enforce it
                     model.Add(person_works[p][w][fixed] == 0)
+                else:
+                    # Person is EDO-eligible but no fixed day preference
+                    # Solver must pick at least one day off for this person this week
+                    # The workday count constraint already limits total days worked,
+                    # so we just need to ensure there's at least one OFF day
+                    # Sum of non-working days must be >= 1
+                    off_days = [person_works[p][w][d].Not() for d in days]
+                    model.Add(sum(off_days) >= 1)
     
     # 7. 48h/week constraint: max 48 hours per week (Mon-Fri)
     slog.step("Constraint: 48h per week")
@@ -279,49 +290,39 @@ def solve_pairs(
             model.Add(sum(week_hours) <= 48)
     
     # 7b. 48h rolling window constraint (across weeks, weekend = 0h)
-    # Optimized: Direct linear constraint without intermediate IntVars
+    # ALIGNED with validation.py:check_rolling_48h() - uses flat timeline approach
     slog.step("Constraint: 48h rolling window (Hard)")
-    # Note: Day indices are 0=Mon, 1=Tue, ..., 4=Fri
     
-    # Pre-build assignment hour expressions for each person/day
-    # hours_expr[p][(w,d)] = linear expression for hours worked
-    hours_expr = {}
+    # Build a flat timeline: 7 days per week (Mon-Fri work, Sat-Sun = 0)
+    # Timeline indices: week1=[0-6], week2=[7-13], etc.
+    # Days 0-4 = Mon-Fri (workdays), 5-6 = Sat-Sun (weekend, always 0)
+    
+    day_to_idx = {d: i for i, d in enumerate(days)}  # e.g., {"Lun": 0, "Mar": 1, ...}
+    
     for p in names:
-        hours_expr[p] = {}
+        # Build timeline expressions for this person
+        # timeline_hours[i] = hours worked on day i of flat timeline
+        timeline_hours = []
+        
         for w in range(1, weeks + 1):
+            # Mon-Fri (indices 0-4 within week)
             for d in days:
-                # Sum hours directly without creating new IntVar
-                hours_expr[p][(w, d)] = sum(
+                hour_expr = sum(
                     assign[p][w][d][s] * SHIFTS[s].hours
                     for s in ["D", "N", "S"]
                 )
-    
-    # Apply rolling window constraint
-    # Windows that span week boundaries need special handling
-    for p in names:
-        for w in range(1, weeks + 1):
-            # Windows starting Mon-Fri of this week
-            for start_day_idx in range(5):  # Mon=0 to Fri=4
-                window_hours = []
-                
-                # Collect 7 days starting from start_day_idx
-                for offset in range(7):
-                    day_idx = (start_day_idx + offset) % 7
-                    if day_idx >= 5:  # Weekend (Sat=5, Sun=6)
-                        continue  # 0 hours, skip
-                    
-                    # Calculate which week this falls in
-                    week_offset = (start_day_idx + offset) // 7
-                    target_week = w + week_offset
-                    
-                    if target_week > weeks:
-                        break  # Beyond horizon
-                    
-                    target_day = days[day_idx]
-                    window_hours.append(hours_expr[p][(target_week, target_day)])
-                
-                if window_hours:
-                    model.Add(sum(window_hours) <= 48)
+                timeline_hours.append(hour_expr)
+            
+            # Sat-Sun (indices 5-6 within week) - 0 hours
+            timeline_hours.append(0)  # Saturday
+            timeline_hours.append(0)  # Sunday
+        
+        # Sliding window of 7 consecutive days
+        # Same logic as validation.py:483-486
+        for i in range(len(timeline_hours) - 6):
+            window = timeline_hours[i : i + 7]
+            model.Add(sum(window) <= 48)
+
     
     # 9. Max consecutive work days
     max_days = getattr(config, "max_consecutive_days", 6)
