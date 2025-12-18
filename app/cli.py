@@ -1,6 +1,6 @@
 import argparse
 
-from rota.engine.solve_legacy import solve
+from rota.engine.solve import solve
 
 
 def main():
