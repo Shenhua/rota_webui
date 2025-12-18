@@ -35,6 +35,9 @@ def load_team(source: Union[str, Path, pd.DataFrame]) -> List[Person]:
         
     Returns:
         List of Person objects
+        
+    Raises:
+        ValueError: If duplicate names are found or required columns missing
     """
     if isinstance(source, pd.DataFrame):
         df = source.copy()
@@ -46,6 +49,13 @@ def load_team(source: Union[str, Path, pd.DataFrame]) -> List[Person]:
     # Required column
     if "name" not in df.columns:
         raise ValueError("CSV must have a 'name' column")
+    
+    # Check for duplicate names
+    names = df["name"].astype(str).str.strip()
+    names = names[names != ""]  # Exclude empty names
+    duplicates = names[names.duplicated()].unique().tolist()
+    if duplicates:
+        raise ValueError(f"Duplicate names found in CSV: {duplicates}")
     
     people = []
     for idx, row in df.iterrows():
@@ -70,6 +80,7 @@ def load_team(source: Union[str, Path, pd.DataFrame]) -> List[Person]:
             team=str(row.get("team", "")).strip(),
             available_weekends=_safe_bool(row.get("available_weekends", True)),
             max_weekends_per_month=_safe_int(row.get("max_weekends_per_month"), 2),
+            is_contractor=_safe_bool(row.get("is_contractor")),
             id=idx,
         )
         people.append(person)

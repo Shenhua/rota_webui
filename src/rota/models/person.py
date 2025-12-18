@@ -89,4 +89,5 @@ class Person:
             team=str(d.get("team", "")),
             available_weekends=bool(d.get("available_weekends", True)),
             max_weekends_per_month=int(d.get("max_weekends_per_month", 2)),
+            is_contractor=bool(d.get("is_contractor", False)),
         )

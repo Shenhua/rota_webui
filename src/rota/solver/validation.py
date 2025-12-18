@@ -397,7 +397,7 @@ def score_solution(
         5 * validation.doublons_jour +
         w_nighthafter * validation.nuit_suivie_travail +
         w_clopen * validation.soir_vers_jour +
-        0 * validation.rolling_48h_violations + 
+        5.0 * validation.rolling_48h_violations + 
         w_dev * validation.ecarts_hebdo_jours +
         w_dev * validation.ecarts_horizon_personnes +
         w_night * fairness.night_std +
