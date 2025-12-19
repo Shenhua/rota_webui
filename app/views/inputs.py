@@ -46,5 +46,5 @@ def render_inputs(state: SessionStateManager):
             render_study_info(cfg, state.people, lambda hash: load_study_result(hash, state.people, cfg))
 
         # Trigger button
-        if st.button("🚀 Lancer l'optimisation", type="primary", use_container_width=True):
+        if st.button("🚀 Lancer l'optimisation", type="primary", width="stretch"):
             st.session_state.trigger_optimize = True

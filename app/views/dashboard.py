@@ -136,7 +136,7 @@ def _render_diagnostic_banner(state):
                 df_missing = pd.DataFrame(result.details)
                 total_people = df_missing["Besoins"].sum()
                 st.markdown(f"**Total à recruter: {total_people} personnes**")
-                st.dataframe(df_missing, use_container_width=True, hide_index=True)
+                st.dataframe(df_missing, width="stretch", hide_index=True)
             else:
                 st.info("Aucun détail disponible.")
 
@@ -242,7 +242,7 @@ def _render_full_week_matrix(state):
         }
         return colors.get(val, "")
 
-    st.dataframe(df.style.map(color_shift), use_container_width=True, height=450)
+    st.dataframe(df.style.map(color_shift), width="stretch", height=450)
 
 
 def _render_weekday_matrix(state):
@@ -300,7 +300,7 @@ def _render_weekday_matrix(state):
         }
         return colors.get(val, "")
 
-    st.dataframe(df.style.map(color_shift), use_container_width=True, height=450)
+    st.dataframe(df.style.map(color_shift), width="stretch", height=450)
 
 
 def _render_weekend_matrix(state):
@@ -343,7 +343,7 @@ def _render_weekend_matrix(state):
         return ""
     
     styled_we = df_we.style.map(color_weekend, subset=["Quart"])
-    st.dataframe(styled_we, use_container_width=True, hide_index=True)
+    st.dataframe(styled_we, width="stretch", hide_index=True)
 
 
 # =============================================================================
@@ -430,9 +430,9 @@ def _render_coverage(state, merged_mode: bool = False):
     cols_to_style = [c for c in all_cols if c in df_coverage.columns]
     if cols_to_style:
         styled_cov = df_coverage.style.map(color_coverage, subset=cols_to_style)
-        st.dataframe(styled_cov, use_container_width=True, hide_index=True)
+        st.dataframe(styled_cov, width="stretch", hide_index=True)
     else:
-        st.dataframe(df_coverage, use_container_width=True, hide_index=True)
+        st.dataframe(df_coverage, width="stretch", hide_index=True)
 
     # Gap details
     validation = state.validation
@@ -491,9 +491,9 @@ def _render_person_stats(state, merged_mode: bool = False):
 
     if "Δ" in df_stats.columns:
         styled_stats = df_stats.style.map(color_delta, subset=["Δ"])
-        st.dataframe(styled_stats, use_container_width=True, hide_index=True)
+        st.dataframe(styled_stats, width="stretch", hide_index=True)
     else:
-        st.dataframe(df_stats, use_container_width=True, hide_index=True)
+        st.dataframe(df_stats, width="stretch", hide_index=True)
 
     # Fairness by cohort
     st.divider()
@@ -508,7 +508,7 @@ def _render_person_stats(state, merged_mode: bool = False):
                 "σ Nuits": f"{std_n:.2f}",
                 "σ Soirs": f"{std_e:.2f}"
             })
-        st.dataframe(pd.DataFrame(cohort_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(cohort_data), width="stretch", hide_index=True)
     else:
         st.info("Données d'équité non disponibles.")
 
@@ -544,7 +544,7 @@ def _render_analytics(state, merged_mode: bool = False):
             color_discrete_sequence=["#DDEEFF", "#FFE4CC", "#E6CCFF"]
         )
         fig_pie.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, width="stretch")
 
     with col2:
         st.write("**Couverture par semaine**")
@@ -593,7 +593,7 @@ def _render_analytics(state, merged_mode: bool = False):
                 color_discrete_sequence=["#C8E6C9", "#A5D6A7", "#81C784", "#66BB6A"]
             )
             fig_we_pie.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
-            st.plotly_chart(fig_we_pie, use_container_width=True)
+            st.plotly_chart(fig_we_pie, width="stretch")
         
         with we_col2:
             st.write("**WE Shifts par personne (Top 10)**")
@@ -609,7 +609,7 @@ def _render_analytics(state, merged_mode: bool = False):
                 fig_bar = px.bar(df_we_person, x="Personne", y="Shifts WE", 
                                  color_discrete_sequence=["#4CAF50"])
                 fig_bar.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width="stretch")
 
     # Fairness chart
     st.divider()
@@ -690,7 +690,7 @@ def _render_capacity_analysis(state, merged_mode: bool = False):
             "Écart": gap,
             "Status": "✅" if gap <= 0 else f"❌ -{gap}"
         })
-    st.dataframe(pd.DataFrame(shift_data), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(shift_data), width="stretch", hide_index=True)
     
     # Weekend capacity (if merged mode)
     if merged_mode and w_result and w_result.assignments:
@@ -715,7 +715,7 @@ def _render_capacity_analysis(state, merged_mode: bool = False):
                 "Écart": gap,
                 "Status": "✅" if gap <= 0 else f"❌ -{gap}"
             })
-        st.dataframe(pd.DataFrame(we_shift_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(we_shift_data), width="stretch", hide_index=True)
 
     # Recommendation
     st.divider()
@@ -825,4 +825,4 @@ def _render_by_shift(state, merged_mode: bool = False):
                 row["Admin"] = "-"  # No admin on weekends
                 pairs_data.append(row)
         
-        st.dataframe(pd.DataFrame(pairs_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(pairs_data), width="stretch", hide_index=True)

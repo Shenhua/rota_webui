@@ -85,7 +85,7 @@ def render_team_editor(uploaded_file: Optional[Any] = None) -> List[Person]:
         
         edited_df = st.data_editor(
             team_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             num_rows="dynamic",
             column_config=column_config,

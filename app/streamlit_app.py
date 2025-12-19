@@ -272,7 +272,7 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
                     }
                     return colors.get(val, "")
                 
-                st.dataframe(df.style.map(color_shift), use_container_width=True, height=400)
+                st.dataframe(df.style.map(color_shift), width="stretch", height=400)
             else:
                 st.info("Aucune affectation week-end.")
         else:
@@ -314,7 +314,7 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
             return ""
         
         styled_cov = df_cov.style.map(color_coverage, subset=["Sam", "Dim"])
-        st.dataframe(styled_cov, use_container_width=True, hide_index=True)
+        st.dataframe(styled_cov, width="stretch", hide_index=True)
     
     # === TAB 3: PERSONNES ===
     with t3:
@@ -330,7 +330,7 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
         
         if person_data:
             df_person = pd.DataFrame(person_data)
-            st.dataframe(df_person, use_container_width=True, hide_index=True)
+            st.dataframe(df_person, width="stretch", hide_index=True)
         else:
             st.info("Aucune donnée de personne.")
     
@@ -354,7 +354,7 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
                 color_discrete_sequence=["#C8E6C9", "#A5D6A7", "#81C784", "#66BB6A"]
             )
             fig.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
         
         with col2:
             st.write("**Top 10 shifts WE par personne**")
@@ -363,7 +363,7 @@ def _render_weekend_only_dashboard(state: SessionStateManager):
                 df_top = pd.DataFrame(sorted_counts, columns=["Personne", "Shifts"])
                 fig_bar = px.bar(df_top, x="Personne", y="Shifts", color_discrete_sequence=["#4CAF50"])
                 fig_bar.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width="stretch")
 
 if __name__ == "__main__":
     main()
